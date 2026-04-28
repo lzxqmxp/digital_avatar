@@ -10,7 +10,7 @@ export const useAvatarStore = defineStore('avatar', {
     isRunning: false,
     engine: 'Wav2Lip' as AvatarEngine,
     selectedAsset: null as string | null,
-    cameraMode: false,
+    cameraMode: false
   }),
 
   actions: {
@@ -18,7 +18,7 @@ export const useAvatarStore = defineStore('avatar', {
       const res = await apiClient.avatarStart({
         model_id: this.selectedAsset || 'default',
         engine: this.engine,
-        camera_mode: this.cameraMode ? 'camera' : 'file',
+        camera_mode: this.cameraMode ? 'camera' : 'file'
       })
       if (res.ok && res.data) {
         this.avatarSessionId = res.data.avatar_session_id
@@ -55,6 +55,6 @@ export const useAvatarStore = defineStore('avatar', {
         await this.start()
       }
       return { ok: true, data: { stream_url: this.streamUrl } }
-    },
-  },
+    }
+  }
 })

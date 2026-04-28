@@ -38,7 +38,7 @@ export const IpcChannels = {
 
   // System
   APP_READY: 'app:ready',
-  APP_ERROR: 'app:error',
+  APP_ERROR: 'app:error'
 } as const
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels]

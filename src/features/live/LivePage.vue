@@ -46,10 +46,21 @@ async function onFetchStart() {
   const res = await liveStore.connect(roomId.value.trim(), 'douyin', 'user-001')
   if (res.ok) {
     setBtn('btn_live_fetch_start', 'success', '已连接直播间')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_fetch_start', action: '开始拉取直播消息', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_fetch_start',
+      action: '开始拉取直播消息',
+      result: 'success'
+    })
   } else {
     setBtn('btn_live_fetch_start', 'error', res.message || '连接失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_fetch_start', action: '开始拉取直播消息', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_fetch_start',
+      action: '开始拉取直播消息',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 
@@ -59,29 +70,59 @@ async function onFetchStop() {
   const res = await liveStore.disconnect()
   if (res.ok) {
     setBtn('btn_live_fetch_stop', 'success', '已停止获取')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_fetch_stop', action: '停止拉取直播消息', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_fetch_stop',
+      action: '停止拉取直播消息',
+      result: 'success'
+    })
   } else {
     setBtn('btn_live_fetch_stop', 'error', res.message || '停止失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_fetch_stop', action: '停止拉取直播消息', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_fetch_stop',
+      action: '停止拉取直播消息',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 
 // --- sw_live_message_alert ---
 function onToggleAlert() {
   liveStore.toggleMessageAlert()
-  writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'sw_live_message_alert', action: '切换消息提醒', result: 'success' })
+  writeAudit({
+    session_id: sessionStore.sessionId || '',
+    button_id: 'sw_live_message_alert',
+    action: '切换消息提醒',
+    result: 'success'
+  })
 }
 
 // --- btn_live_tts_preview ---
 async function onTtsPreview() {
   setBtn('btn_live_tts_preview', 'loading')
-  const res = await apiClient.ttsSynthesize({ text: '这是一段测试语音，用于预览效果。', voice_id: 'default' })
+  const res = await apiClient.ttsSynthesize({
+    text: '这是一段测试语音，用于预览效果。',
+    voice_id: 'default'
+  })
   if (res.ok) {
     setBtn('btn_live_tts_preview', 'success', `试听就绪 (${res.data?.duration_ms}ms)`)
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_tts_preview', action: '预览TTS语音', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_tts_preview',
+      action: '预览TTS语音',
+      result: 'success'
+    })
   } else {
     setBtn('btn_live_tts_preview', 'error', res.message || 'TTS失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_tts_preview', action: '预览TTS语音', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_tts_preview',
+      action: '预览TTS语音',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 
@@ -91,12 +132,32 @@ async function onRuntimeToggle() {
   setBtn('btn_live_runtime_toggle', 'loading')
   if (isRunning.value) {
     const res = await sessionStore.stopSession()
-    setBtn('btn_live_runtime_toggle', res?.ok ? 'success' : 'error', res?.ok ? '已切换为待机' : (res?.message || '切换失败'))
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_runtime_toggle', action: '切换运行时状态', result: res?.ok ? 'success' : 'failure', error_code: res?.errorCode })
+    setBtn(
+      'btn_live_runtime_toggle',
+      res?.ok ? 'success' : 'error',
+      res?.ok ? '已切换为待机' : res?.message || '切换失败'
+    )
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_runtime_toggle',
+      action: '切换运行时状态',
+      result: res?.ok ? 'success' : 'failure',
+      error_code: res?.errorCode
+    })
   } else {
     const res = await sessionStore.startSession(roomId.value || 'default', 'user-001')
-    setBtn('btn_live_runtime_toggle', res?.ok ? 'success' : 'error', res?.ok ? '已启动运行' : (res?.message || '启动失败'))
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_runtime_toggle', action: '切换运行时状态', result: res?.ok ? 'success' : 'failure', error_code: res?.errorCode })
+    setBtn(
+      'btn_live_runtime_toggle',
+      res?.ok ? 'success' : 'error',
+      res?.ok ? '已启动运行' : res?.message || '启动失败'
+    )
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_runtime_toggle',
+      action: '切换运行时状态',
+      result: res?.ok ? 'success' : 'failure',
+      error_code: res?.errorCode
+    })
   }
 }
 
@@ -106,10 +167,21 @@ async function onTtsStop() {
   const res = await apiClient.sessionStop({ session_id: sessionStore.sessionId || '' })
   if (res.ok) {
     setBtn('btn_live_tts_stop', 'success', '已停止AI语音')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_tts_stop', action: '停止TTS播放', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_tts_stop',
+      action: '停止TTS播放',
+      result: 'success'
+    })
   } else {
     setBtn('btn_live_tts_stop', 'error', res.message || '停止失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_tts_stop', action: '停止TTS播放', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_tts_stop',
+      action: '停止TTS播放',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 
@@ -120,10 +192,21 @@ async function onPause() {
   if (res.ok) {
     sessionStore.sessionState = 'paused'
     setBtn('btn_live_pause', 'success', '已暂停')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_pause', action: '暂停直播推送', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_pause',
+      action: '暂停直播推送',
+      result: 'success'
+    })
   } else {
     setBtn('btn_live_pause', 'error', res.message || '暂停失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_pause', action: '暂停直播推送', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_pause',
+      action: '暂停直播推送',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 
@@ -133,23 +216,48 @@ async function onStop() {
   const res = await sessionStore.stopSession()
   if (res?.ok) {
     setBtn('btn_live_stop', 'success', '会话已停止')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_stop', action: '停止直播会话', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_stop',
+      action: '停止直播会话',
+      result: 'success'
+    })
   } else {
     setBtn('btn_live_stop', 'error', res?.message || '停止失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_stop', action: '停止直播会话', result: 'failure', error_code: res?.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_stop',
+      action: '停止直播会话',
+      result: 'failure',
+      error_code: res?.errorCode
+    })
   }
 }
 
 // --- btn_live_model_rotate ---
 async function onModelRotate() {
   setBtn('btn_live_model_rotate', 'loading')
-  const res = await apiClient.sessionStart({ room_id: roomId.value || 'default', account_id: 'user-001' })
+  const res = await apiClient.sessionStart({
+    room_id: roomId.value || 'default',
+    account_id: 'user-001'
+  })
   if (res.ok) {
     setBtn('btn_live_model_rotate', 'success', '模型已轮换')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_model_rotate', action: '轮换AI模型', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_model_rotate',
+      action: '轮换AI模型',
+      result: 'success'
+    })
   } else {
     setBtn('btn_live_model_rotate', 'error', res.message || '轮换失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_model_rotate', action: '轮换AI模型', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_model_rotate',
+      action: '轮换AI模型',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 
@@ -163,15 +271,26 @@ async function onInsert() {
   const res = await apiClient.queueInsert({
     session_id: sessionStore.sessionId || '',
     item: { text: insertText.value, priority: 10, source: 'manual' },
-    position: 0,
+    position: 0
   })
   if (res.ok) {
     setBtn('btn_live_insert', 'success', `已插播 (position: ${res.data?.position})`)
     insertText.value = ''
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_insert', action: '插入优先队列', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_insert',
+      action: '插入优先队列',
+      result: 'success'
+    })
   } else {
     setBtn('btn_live_insert', 'error', res.message || '插播失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_insert', action: '插入优先队列', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_insert',
+      action: '插入优先队列',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 
@@ -190,7 +309,13 @@ async function onSendText() {
     if (!rewriteRes.ok || !rewriteRes.data) {
       setBtn('btn_live_send_text', 'error', rewriteRes.message || '改写失败')
       pipelineStatus.value = '改写失败'
-      writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_send_text', action: '发送文本', result: 'failure', error_code: rewriteRes.errorCode })
+      writeAudit({
+        session_id: sessionStore.sessionId || '',
+        button_id: 'btn_live_send_text',
+        action: '发送文本',
+        result: 'failure',
+        error_code: rewriteRes.errorCode
+      })
       return
     }
     const rewrittenText = rewriteRes.data.rewritten_text
@@ -201,7 +326,13 @@ async function onSendText() {
     if (!moderationRes.ok || !moderationRes.data) {
       setBtn('btn_live_send_text', 'error', moderationRes.message || '审核失败')
       pipelineStatus.value = '审核失败'
-      writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_send_text', action: '发送文本', result: 'failure', error_code: moderationRes.errorCode })
+      writeAudit({
+        session_id: sessionStore.sessionId || '',
+        button_id: 'btn_live_send_text',
+        action: '发送文本',
+        result: 'failure',
+        error_code: moderationRes.errorCode
+      })
       return
     }
 
@@ -209,7 +340,13 @@ async function onSendText() {
     if (moderationRes.data.risk_level === 'high') {
       setBtn('btn_live_send_text', 'error', '内容风险过高，待人工审核')
       pipelineStatus.value = '待审'
-      writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_send_text', action: '发送文本', result: 'failure', error_code: 'HIGH_RISK' })
+      writeAudit({
+        session_id: sessionStore.sessionId || '',
+        button_id: 'btn_live_send_text',
+        action: '发送文本',
+        result: 'failure',
+        error_code: 'HIGH_RISK'
+      })
       return
     }
 
@@ -220,7 +357,13 @@ async function onSendText() {
     if (!ttsRes.ok || !ttsRes.data) {
       setBtn('btn_live_send_text', 'error', ttsRes.message || 'TTS失败')
       pipelineStatus.value = 'TTS失败'
-      writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_send_text', action: '发送文本', result: 'failure', error_code: ttsRes.errorCode })
+      writeAudit({
+        session_id: sessionStore.sessionId || '',
+        button_id: 'btn_live_send_text',
+        action: '发送文本',
+        result: 'failure',
+        error_code: ttsRes.errorCode
+      })
       return
     }
 
@@ -229,7 +372,12 @@ async function onSendText() {
     setBtn('btn_live_send_text', 'success', `播报中 (${ttsRes.data.duration_ms}ms)`)
     liveStore.addMessage(rewrittenText, '系统播报')
     sendText.value = ''
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_send_text', action: '发送文本', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_send_text',
+      action: '发送文本',
+      result: 'success'
+    })
 
     setTimeout(() => {
       if (pipelineStatus.value === '播报中') pipelineStatus.value = ''
@@ -238,7 +386,12 @@ async function onSendText() {
     const msg = e instanceof Error ? e.message : '未知错误'
     setBtn('btn_live_send_text', 'error', msg)
     pipelineStatus.value = '错误'
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_send_text', action: '发送文本', result: 'failure' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_send_text',
+      action: '发送文本',
+      result: 'failure'
+    })
   }
 }
 
@@ -248,10 +401,21 @@ async function onAccountClose() {
   const res = await liveStore.disconnect()
   if (res.ok) {
     setBtn('btn_live_account_close', 'success', '账号接入已关闭')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_account_close', action: '关闭直播账号连接', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_account_close',
+      action: '关闭直播账号连接',
+      result: 'success'
+    })
   } else {
     setBtn('btn_live_account_close', 'error', res.message || '关闭失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_account_close', action: '关闭直播账号连接', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_account_close',
+      action: '关闭直播账号连接',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 
@@ -262,10 +426,21 @@ async function onInitMessages() {
   if (res.ok) {
     liveStore.initMessages()
     setBtn('btn_live_init_messages', 'success', '消息已初始化')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_init_messages', action: '初始化消息列表', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_init_messages',
+      action: '初始化消息列表',
+      result: 'success'
+    })
   } else {
     setBtn('btn_live_init_messages', 'error', res.message || '初始化失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_live_init_messages', action: '初始化消息列表', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_live_init_messages',
+      action: '初始化消息列表',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 </script>
@@ -278,12 +453,7 @@ async function onInitMessages() {
     <section class="section">
       <h2 class="section-title">直播间连接</h2>
       <div class="form-row">
-        <input
-          v-model="roomId"
-          class="input"
-          placeholder="直播间 room_id"
-          maxlength="64"
-        />
+        <input v-model="roomId" class="input" placeholder="直播间 room_id" maxlength="64" />
         <button
           id="btn_live_fetch_start"
           :class="btnClass('btn_live_fetch_start')"
@@ -310,9 +480,21 @@ async function onInitMessages() {
         </button>
       </div>
       <div class="msg-row">
-        <span v-if="btnMessages['btn_live_fetch_start']" :class="btnStates['btn_live_fetch_start'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_live_fetch_start'] }}</span>
-        <span v-if="btnMessages['btn_live_fetch_stop']" :class="btnStates['btn_live_fetch_stop'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_live_fetch_stop'] }}</span>
-        <span v-if="btnMessages['btn_live_account_close']" :class="btnStates['btn_live_account_close'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_live_account_close'] }}</span>
+        <span
+          v-if="btnMessages['btn_live_fetch_start']"
+          :class="btnStates['btn_live_fetch_start'] === 'error' ? 'msg--error' : 'msg--success'"
+          >{{ btnMessages['btn_live_fetch_start'] }}</span
+        >
+        <span
+          v-if="btnMessages['btn_live_fetch_stop']"
+          :class="btnStates['btn_live_fetch_stop'] === 'error' ? 'msg--error' : 'msg--success'"
+          >{{ btnMessages['btn_live_fetch_stop'] }}</span
+        >
+        <span
+          v-if="btnMessages['btn_live_account_close']"
+          :class="btnStates['btn_live_account_close'] === 'error' ? 'msg--error' : 'msg--success'"
+          >{{ btnMessages['btn_live_account_close'] }}</span
+        >
         <span class="status-chip" :class="liveStore.isConnected ? 'chip--green' : 'chip--gray'">
           {{ liveStore.isConnected ? `已连接 (${liveStore.connectionId?.slice(0, 8)})` : '未连接' }}
         </span>
@@ -365,8 +547,21 @@ async function onInitMessages() {
         </button>
       </div>
       <div class="msg-row">
-        <span v-for="id in ['btn_live_runtime_toggle','btn_live_tts_stop','btn_live_pause','btn_live_stop','btn_live_model_rotate']" :key="id">
-          <span v-if="btnMessages[id]" :class="btnStates[id] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages[id] }}</span>
+        <span
+          v-for="id in [
+            'btn_live_runtime_toggle',
+            'btn_live_tts_stop',
+            'btn_live_pause',
+            'btn_live_stop',
+            'btn_live_model_rotate'
+          ]"
+          :key="id"
+        >
+          <span
+            v-if="btnMessages[id]"
+            :class="btnStates[id] === 'error' ? 'msg--error' : 'msg--success'"
+            >{{ btnMessages[id] }}</span
+          >
         </span>
       </div>
     </section>
@@ -403,8 +598,16 @@ async function onInitMessages() {
         </button>
       </div>
       <div class="msg-row">
-        <span v-if="btnMessages['btn_live_tts_preview']" :class="btnStates['btn_live_tts_preview'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_live_tts_preview'] }}</span>
-        <span v-if="btnMessages['btn_live_init_messages']" :class="btnStates['btn_live_init_messages'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_live_init_messages'] }}</span>
+        <span
+          v-if="btnMessages['btn_live_tts_preview']"
+          :class="btnStates['btn_live_tts_preview'] === 'error' ? 'msg--error' : 'msg--success'"
+          >{{ btnMessages['btn_live_tts_preview'] }}</span
+        >
+        <span
+          v-if="btnMessages['btn_live_init_messages']"
+          :class="btnStates['btn_live_init_messages'] === 'error' ? 'msg--error' : 'msg--success'"
+          >{{ btnMessages['btn_live_init_messages'] }}</span
+        >
       </div>
     </section>
 
@@ -429,10 +632,21 @@ async function onInitMessages() {
           </button>
         </div>
         <div class="msg-row">
-          <span v-if="pipelineStatus" class="pipeline-status" :class="{ 'pipeline-status--warn': pipelineStatus === '待审', 'pipeline-status--broadcast': pipelineStatus === '播报中' }">
+          <span
+            v-if="pipelineStatus"
+            class="pipeline-status"
+            :class="{
+              'pipeline-status--warn': pipelineStatus === '待审',
+              'pipeline-status--broadcast': pipelineStatus === '播报中'
+            }"
+          >
             {{ pipelineStatus }}
           </span>
-          <span v-if="btnMessages['btn_live_send_text']" :class="btnStates['btn_live_send_text'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_live_send_text'] }}</span>
+          <span
+            v-if="btnMessages['btn_live_send_text']"
+            :class="btnStates['btn_live_send_text'] === 'error' ? 'msg--error' : 'msg--success'"
+            >{{ btnMessages['btn_live_send_text'] }}</span
+          >
         </div>
         <div class="form-row">
           <input
@@ -451,7 +665,11 @@ async function onInitMessages() {
           </button>
         </div>
         <div class="msg-row">
-          <span v-if="btnMessages['btn_live_insert']" :class="btnStates['btn_live_insert'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_live_insert'] }}</span>
+          <span
+            v-if="btnMessages['btn_live_insert']"
+            :class="btnStates['btn_live_insert'] === 'error' ? 'msg--error' : 'msg--success'"
+            >{{ btnMessages['btn_live_insert'] }}</span
+          >
         </div>
       </div>
     </section>
@@ -460,11 +678,7 @@ async function onInitMessages() {
     <section class="section">
       <h2 class="section-title">消息列表 ({{ liveStore.messages.length }})</h2>
       <div class="message-list">
-        <div
-          v-for="msg in liveStore.messages.slice().reverse()"
-          :key="msg.id"
-          class="message-item"
-        >
+        <div v-for="msg in liveStore.messages.slice().reverse()" :key="msg.id" class="message-item">
           <span class="message-user">{{ msg.user }}</span>
           <span class="message-text">{{ msg.text }}</span>
           <span class="message-ts">{{ new Date(msg.ts).toLocaleTimeString() }}</span>
@@ -476,37 +690,182 @@ async function onInitMessages() {
 </template>
 
 <style scoped>
-.page { max-width: 900px; }
-.page-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: #e2e8f0; }
-.section { background: #1e293b; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-.section-title { font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
-.form-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.form-col { display: flex; flex-direction: column; gap: 10px; }
-.msg-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 20px; margin-top: 6px; }
-.input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; min-width: 160px; }
-.input--wide { flex: 1; min-width: 200px; }
-.input:focus { outline: none; border-color: #38bdf8; }
-.btn { padding: 6px 14px; border-radius: 6px; border: none; font-size: 13px; cursor: pointer; transition: all 0.15s; background: #334155; color: #e2e8f0; }
-.btn:hover:not(:disabled) { background: #475569; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn--loading { background: #1d4ed8; color: #bfdbfe; }
-.btn--success { background: #166534; color: #bbf7d0; }
-.btn--error { background: #7f1d1d; color: #fecaca; }
-.msg--success { color: #4ade80; font-size: 12px; }
-.msg--error { color: #f87171; font-size: 12px; }
-.toggle-label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: #cbd5e1; }
-.toggle-label input[type="checkbox"] { cursor: pointer; }
-.toggle-state { font-size: 11px; color: #94a3b8; }
-.status-chip { font-size: 11px; padding: 2px 8px; border-radius: 99px; }
-.chip--green { background: #166534; color: #4ade80; }
-.chip--gray { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
-.pipeline-status { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 99px; background: #1d4ed8; color: #bfdbfe; }
-.pipeline-status--warn { background: #92400e; color: #fde68a; }
-.pipeline-status--broadcast { background: #166534; color: #4ade80; }
-.message-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
-.message-item { display: flex; gap: 10px; align-items: baseline; font-size: 13px; padding: 4px 8px; background: #0f172a; border-radius: 4px; }
-.message-user { color: #38bdf8; font-weight: 600; min-width: 60px; font-size: 12px; }
-.message-text { color: #e2e8f0; flex: 1; }
-.message-ts { color: #64748b; font-size: 11px; white-space: nowrap; }
-.message-empty { color: #475569; font-size: 13px; text-align: center; padding: 16px; }
+.page {
+  max-width: 900px;
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #e2e8f0;
+}
+.section {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.msg-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 20px;
+  margin-top: 6px;
+}
+.input {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  min-width: 160px;
+}
+.input--wide {
+  flex: 1;
+  min-width: 200px;
+}
+.input:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+.btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #334155;
+  color: #e2e8f0;
+}
+.btn:hover:not(:disabled) {
+  background: #475569;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn--loading {
+  background: #1d4ed8;
+  color: #bfdbfe;
+}
+.btn--success {
+  background: #166534;
+  color: #bbf7d0;
+}
+.btn--error {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+.msg--success {
+  color: #4ade80;
+  font-size: 12px;
+}
+.msg--error {
+  color: #f87171;
+  font-size: 12px;
+}
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+.toggle-label input[type='checkbox'] {
+  cursor: pointer;
+}
+.toggle-state {
+  font-size: 11px;
+  color: #94a3b8;
+}
+.status-chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.chip--green {
+  background: #166534;
+  color: #4ade80;
+}
+.chip--gray {
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
+}
+.pipeline-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 99px;
+  background: #1d4ed8;
+  color: #bfdbfe;
+}
+.pipeline-status--warn {
+  background: #92400e;
+  color: #fde68a;
+}
+.pipeline-status--broadcast {
+  background: #166534;
+  color: #4ade80;
+}
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.message-item {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 13px;
+  padding: 4px 8px;
+  background: #0f172a;
+  border-radius: 4px;
+}
+.message-user {
+  color: #38bdf8;
+  font-weight: 600;
+  min-width: 60px;
+  font-size: 12px;
+}
+.message-text {
+  color: #e2e8f0;
+  flex: 1;
+}
+.message-ts {
+  color: #64748b;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.message-empty {
+  color: #475569;
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
+}
 </style>

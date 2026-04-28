@@ -7,7 +7,7 @@ export const useSessionStore = defineStore('session', {
     sessionId: null as string | null,
     sessionState: 'idle' as SessionState,
     metrics: null as MetricsResponse | null,
-    isLoading: false,
+    isLoading: false
   }),
 
   actions: {
@@ -55,6 +55,6 @@ export const useSessionStore = defineStore('session', {
         this.metrics = res.data
       }
       return res
-    },
-  },
+    }
+  }
 })

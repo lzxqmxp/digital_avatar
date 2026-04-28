@@ -6,13 +6,11 @@ function uuid(): string {
   return Math.random().toString(36).substring(2) + Date.now().toString(36)
 }
 
-export function writeAudit(
-  entry: Omit<AuditEntry, 'audit_id' | 'ts'>,
-): AuditEntry {
+export function writeAudit(entry: Omit<AuditEntry, 'audit_id' | 'ts'>): AuditEntry {
   const full: AuditEntry = {
     ...entry,
     audit_id: uuid(),
-    ts: Date.now(),
+    ts: Date.now()
   }
   auditLog.push(full)
   console.log('[AUDIT]', JSON.stringify(full))

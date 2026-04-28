@@ -12,7 +12,7 @@ const stateColor: Record<string, string> = {
   paused: '#f59e0b',
   stopped: '#ef4444',
   degraded: '#f97316',
-  error: '#dc2626',
+  error: '#dc2626'
 }
 </script>
 
@@ -81,7 +81,9 @@ const stateColor: Record<string, string> = {
   color: #94a3b8;
   text-decoration: none;
   font-size: 14px;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .nav-link:hover {

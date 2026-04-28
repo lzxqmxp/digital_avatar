@@ -5,21 +5,21 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/live',
+      redirect: '/live'
     },
     {
       path: '/live',
-      component: () => import('@features/live/LivePage.vue'),
+      component: () => import('@features/live/LivePage.vue')
     },
     {
       path: '/avatar',
-      component: () => import('@features/avatar/AvatarPage.vue'),
+      component: () => import('@features/avatar/AvatarPage.vue')
     },
     {
       path: '/settings',
-      component: () => import('@features/settings/SettingsPage.vue'),
-    },
-  ],
+      component: () => import('@features/settings/SettingsPage.vue')
+    }
+  ]
 })
 
 export default router

@@ -18,7 +18,7 @@ export const ApiPaths = {
   TTS_SYNTHESIZE: '/api/v1/tts/synthesize',
   AVATAR_START: '/api/v1/avatar/start',
   STREAM_START: '/api/v1/stream/start',
-  METRICS: '/api/v1/metrics',
+  METRICS: '/api/v1/metrics'
 } as const
 
 export type ApiPath = (typeof ApiPaths)[keyof typeof ApiPaths]
@@ -42,7 +42,7 @@ export enum ErrorCode {
   PORT_OCCUPIED = 'PORT_OCCUPIED',
   VERSION_CONFLICT = 'VERSION_CONFLICT',
   NO_ACTIVE_TASK = 'NO_ACTIVE_TASK',
-  STOP_FAILED = 'STOP_FAILED',
+  STOP_FAILED = 'STOP_FAILED'
 }
 
 export const ErrorCodeMessage: Record<ErrorCode, string> = {
@@ -60,7 +60,7 @@ export const ErrorCodeMessage: Record<ErrorCode, string> = {
   [ErrorCode.PORT_OCCUPIED]: '端口已被占用，请更换端口',
   [ErrorCode.VERSION_CONFLICT]: '版本冲突，请刷新后重试',
   [ErrorCode.NO_ACTIVE_TASK]: '当前没有进行中的任务',
-  [ErrorCode.STOP_FAILED]: '停止操作失败，请手动处理',
+  [ErrorCode.STOP_FAILED]: '停止操作失败，请手动处理'
 }
 
 // ---------------------------------------------------------------------------

@@ -13,7 +13,7 @@ export const useLiveStore = defineStore('live', {
     connectionId: null as string | null,
     isConnected: false,
     messages: [] as LiveMessage[],
-    messageAlert: false,
+    messageAlert: false
   }),
 
   actions: {
@@ -21,7 +21,7 @@ export const useLiveStore = defineStore('live', {
       const res = await apiClient.liveConnect({
         room_id: roomId,
         platform,
-        account_id: accountId,
+        account_id: accountId
       })
       if (res.ok && res.data) {
         this.connectionId = res.data.connection_id
@@ -32,7 +32,7 @@ export const useLiveStore = defineStore('live', {
 
     async disconnect() {
       const res = await apiClient.liveDisconnect({
-        connection_id: this.connectionId || '',
+        connection_id: this.connectionId || ''
       })
       if (res.ok) {
         this.connectionId = null
@@ -46,7 +46,7 @@ export const useLiveStore = defineStore('live', {
       this.messages = [
         { id: '1', text: '欢迎来到直播间！', user: '系统', ts: now - 3000 },
         { id: '2', text: '今天有什么优惠吗？', user: '用户A', ts: now - 2000 },
-        { id: '3', text: '产品质量怎么样？', user: '用户B', ts: now - 1000 },
+        { id: '3', text: '产品质量怎么样？', user: '用户B', ts: now - 1000 }
       ]
     },
 
@@ -59,8 +59,8 @@ export const useLiveStore = defineStore('live', {
         id: Date.now().toString(),
         text,
         user,
-        ts: Date.now(),
+        ts: Date.now()
       })
-    },
-  },
+    }
+  }
 })

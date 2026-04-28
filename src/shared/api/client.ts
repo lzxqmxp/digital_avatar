@@ -26,7 +26,7 @@ import type {
   AvatarStartResponse,
   StreamStartRequest,
   StreamStartResponse,
-  MetricsResponse,
+  MetricsResponse
 } from '@shared/types/api'
 
 const BASE_URL = 'http://localhost:3000'
@@ -34,7 +34,7 @@ const BASE_URL = 'http://localhost:3000'
 export async function callApi<T>(
   path: string,
   method: string = 'GET',
-  body?: unknown,
+  body?: unknown
 ): Promise<ApiResponse<T>> {
   if (isMock) {
     const { mockCall } = await import('@runtime/mock/handlers')
@@ -45,7 +45,7 @@ export async function callApi<T>(
     const res = await fetch(`${BASE_URL}${path}`, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined
     })
     const json = (await res.json()) as ApiResponse<T>
     return json
@@ -53,7 +53,7 @@ export async function callApi<T>(
     return {
       ok: false,
       data: null,
-      message: e instanceof Error ? e.message : 'Network error',
+      message: e instanceof Error ? e.message : 'Network error'
     }
   }
 }
@@ -65,8 +65,7 @@ export const apiClient = {
   sessionStop: (body: SessionStopRequest) =>
     callApi<SessionStopResponse>(ApiPaths.SESSION_STOP, 'POST', body),
 
-  sessionStatus: () =>
-    callApi<SessionStatusResponse>(ApiPaths.SESSION_STATUS, 'GET'),
+  sessionStatus: () => callApi<SessionStatusResponse>(ApiPaths.SESSION_STATUS, 'GET'),
 
   liveConnect: (body: LiveConnectRequest) =>
     callApi<LiveConnectResponse>(ApiPaths.LIVE_CONNECT, 'POST', body),
@@ -98,5 +97,5 @@ export const apiClient = {
   streamStart: (body: StreamStartRequest) =>
     callApi<StreamStartResponse>(ApiPaths.STREAM_START, 'POST', body),
 
-  metrics: () => callApi<MetricsResponse>(ApiPaths.METRICS, 'GET'),
+  metrics: () => callApi<MetricsResponse>(ApiPaths.METRICS, 'GET')
 }

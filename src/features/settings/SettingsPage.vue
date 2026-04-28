@@ -42,7 +42,12 @@ function onSaveProvider() {
   setBtn('btn_cfg_save_provider', 'loading')
   setTimeout(() => {
     setBtn('btn_cfg_save_provider', 'success', '平台配置已保存')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_cfg_save_provider', action: '保存服务商配置', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_cfg_save_provider',
+      action: '保存服务商配置',
+      result: 'success'
+    })
   }, 200)
 }
 
@@ -52,10 +57,21 @@ async function onEngineRotate() {
   const res = await apiClient.sessionStart({ room_id: 'engine-rotate', account_id: 'system' })
   if (res.ok) {
     setBtn('btn_cfg_engine_rotate', 'success', '引擎已轮换')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_cfg_engine_rotate', action: '轮换推理引擎', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_cfg_engine_rotate',
+      action: '轮换推理引擎',
+      result: 'success'
+    })
   } else {
     setBtn('btn_cfg_engine_rotate', 'error', res.message || '轮换失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_cfg_engine_rotate', action: '轮换推理引擎', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_cfg_engine_rotate',
+      action: '轮换推理引擎',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 
@@ -66,13 +82,27 @@ async function onApiStart() {
     return
   }
   setBtn('btn_cfg_api_start', 'loading')
-  const res = await apiClient.streamStart({ session_id: sessionStore.sessionId || '', rtmp_url: apiAddress.value })
+  const res = await apiClient.streamStart({
+    session_id: sessionStore.sessionId || '',
+    rtmp_url: apiAddress.value
+  })
   if (res.ok) {
     setBtn('btn_cfg_api_start', 'success', `API已启动 (stream: ${res.data?.stream_id})`)
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_cfg_api_start', action: '启动API服务', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_cfg_api_start',
+      action: '启动API服务',
+      result: 'success'
+    })
   } else {
     setBtn('btn_cfg_api_start', 'error', res.message || '启动失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_cfg_api_start', action: '启动API服务', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_cfg_api_start',
+      action: '启动API服务',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 
@@ -82,10 +112,21 @@ async function onApiStop() {
   const res = await apiClient.sessionStop({ session_id: sessionStore.sessionId || '' })
   if (res.ok) {
     setBtn('btn_cfg_api_stop', 'success', '服务已停止')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_cfg_api_stop', action: '停止API服务', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_cfg_api_stop',
+      action: '停止API服务',
+      result: 'success'
+    })
   } else {
     setBtn('btn_cfg_api_stop', 'error', res.message || '停止失败')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_cfg_api_stop', action: '停止API服务', result: 'failure', error_code: res.errorCode })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_cfg_api_stop',
+      action: '停止API服务',
+      result: 'failure',
+      error_code: res.errorCode
+    })
   }
 }
 
@@ -99,7 +140,12 @@ function onResetDefault() {
   promptText.value = ''
   setTimeout(() => {
     setBtn('btn_cfg_reset_default', 'success', '已恢复默认值')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_cfg_reset_default', action: '重置默认配置', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_cfg_reset_default',
+      action: '重置默认配置',
+      result: 'success'
+    })
   }, 150)
 }
 
@@ -108,7 +154,12 @@ function onRefreshOutput() {
   setBtn('btn_cfg_refresh_output', 'loading')
   setTimeout(() => {
     setBtn('btn_cfg_refresh_output', 'success', '输出设备已刷新')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_cfg_refresh_output', action: '刷新输出设备', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_cfg_refresh_output',
+      action: '刷新输出设备',
+      result: 'success'
+    })
   }, 300)
 }
 
@@ -121,7 +172,12 @@ function onSavePrompt() {
   setBtn('btn_cfg_save_prompt', 'loading')
   setTimeout(() => {
     setBtn('btn_cfg_save_prompt', 'success', '改写要求已保存')
-    writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_cfg_save_prompt', action: '保存提示词', result: 'success' })
+    writeAudit({
+      session_id: sessionStore.sessionId || '',
+      button_id: 'btn_cfg_save_prompt',
+      action: '保存提示词',
+      result: 'success'
+    })
   }, 200)
 }
 </script>
@@ -151,7 +207,11 @@ function onSavePrompt() {
           >
             保存改写平台
           </button>
-          <span v-if="btnMessages['btn_cfg_save_provider']" :class="btnStates['btn_cfg_save_provider'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_cfg_save_provider'] }}</span>
+          <span
+            v-if="btnMessages['btn_cfg_save_provider']"
+            :class="btnStates['btn_cfg_save_provider'] === 'error' ? 'msg--error' : 'msg--success'"
+            >{{ btnMessages['btn_cfg_save_provider'] }}</span
+          >
         </div>
       </div>
     </section>
@@ -168,7 +228,11 @@ function onSavePrompt() {
         >
           {{ btnStates['btn_cfg_engine_rotate'] === 'loading' ? '轮换中...' : '引擎轮换' }}
         </button>
-        <span v-if="btnMessages['btn_cfg_engine_rotate']" :class="btnStates['btn_cfg_engine_rotate'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_cfg_engine_rotate'] }}</span>
+        <span
+          v-if="btnMessages['btn_cfg_engine_rotate']"
+          :class="btnStates['btn_cfg_engine_rotate'] === 'error' ? 'msg--error' : 'msg--success'"
+          >{{ btnMessages['btn_cfg_engine_rotate'] }}</span
+        >
       </div>
     </section>
 
@@ -178,7 +242,11 @@ function onSavePrompt() {
       <div class="form-col">
         <div class="form-row">
           <label class="field-label">服务地址</label>
-          <input v-model="apiAddress" class="input input--wide" placeholder="http://localhost:3000" />
+          <input
+            v-model="apiAddress"
+            class="input input--wide"
+            placeholder="http://localhost:3000"
+          />
         </div>
         <div class="form-row">
           <label class="field-label">访问密钥</label>
@@ -201,8 +269,16 @@ function onSavePrompt() {
           >
             云端元素停止
           </button>
-          <span v-if="btnMessages['btn_cfg_api_start']" :class="btnStates['btn_cfg_api_start'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_cfg_api_start'] }}</span>
-          <span v-if="btnMessages['btn_cfg_api_stop']" :class="btnStates['btn_cfg_api_stop'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_cfg_api_stop'] }}</span>
+          <span
+            v-if="btnMessages['btn_cfg_api_start']"
+            :class="btnStates['btn_cfg_api_start'] === 'error' ? 'msg--error' : 'msg--success'"
+            >{{ btnMessages['btn_cfg_api_start'] }}</span
+          >
+          <span
+            v-if="btnMessages['btn_cfg_api_stop']"
+            :class="btnStates['btn_cfg_api_stop'] === 'error' ? 'msg--error' : 'msg--success'"
+            >{{ btnMessages['btn_cfg_api_stop'] }}</span
+          >
         </div>
       </div>
     </section>
@@ -227,8 +303,16 @@ function onSavePrompt() {
         >
           刷新输出设备
         </button>
-        <span v-if="btnMessages['btn_cfg_reset_default']" :class="btnStates['btn_cfg_reset_default'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_cfg_reset_default'] }}</span>
-        <span v-if="btnMessages['btn_cfg_refresh_output']" :class="btnStates['btn_cfg_refresh_output'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_cfg_refresh_output'] }}</span>
+        <span
+          v-if="btnMessages['btn_cfg_reset_default']"
+          :class="btnStates['btn_cfg_reset_default'] === 'error' ? 'msg--error' : 'msg--success'"
+          >{{ btnMessages['btn_cfg_reset_default'] }}</span
+        >
+        <span
+          v-if="btnMessages['btn_cfg_refresh_output']"
+          :class="btnStates['btn_cfg_refresh_output'] === 'error' ? 'msg--error' : 'msg--success'"
+          >{{ btnMessages['btn_cfg_refresh_output'] }}</span
+        >
       </div>
     </section>
 
@@ -251,7 +335,11 @@ function onSavePrompt() {
           >
             保存改写要求
           </button>
-          <span v-if="btnMessages['btn_cfg_save_prompt']" :class="btnStates['btn_cfg_save_prompt'] === 'error' ? 'msg--error' : 'msg--success'">{{ btnMessages['btn_cfg_save_prompt'] }}</span>
+          <span
+            v-if="btnMessages['btn_cfg_save_prompt']"
+            :class="btnStates['btn_cfg_save_prompt'] === 'error' ? 'msg--error' : 'msg--success'"
+            >{{ btnMessages['btn_cfg_save_prompt'] }}</span
+          >
         </div>
       </div>
     </section>
@@ -259,24 +347,111 @@ function onSavePrompt() {
 </template>
 
 <style scoped>
-.page { max-width: 700px; }
-.page-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: #e2e8f0; }
-.section { background: #1e293b; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-.section-title { font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
-.form-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.form-col { display: flex; flex-direction: column; gap: 10px; }
-.field-label { font-size: 13px; color: #94a3b8; min-width: 70px; }
-.input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; min-width: 160px; }
-.input--wide { flex: 1; }
-.input:focus { outline: none; border-color: #38bdf8; }
-.textarea { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 8px 10px; border-radius: 6px; font-size: 13px; width: 100%; resize: vertical; box-sizing: border-box; }
-.textarea:focus { outline: none; border-color: #38bdf8; }
-.btn { padding: 6px 14px; border-radius: 6px; border: none; font-size: 13px; cursor: pointer; transition: all 0.15s; background: #334155; color: #e2e8f0; }
-.btn:hover:not(:disabled) { background: #475569; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn--loading { background: #1d4ed8; color: #bfdbfe; }
-.btn--success { background: #166534; color: #bbf7d0; }
-.btn--error { background: #7f1d1d; color: #fecaca; }
-.msg--success { color: #4ade80; font-size: 12px; }
-.msg--error { color: #f87171; font-size: 12px; }
+.page {
+  max-width: 700px;
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #e2e8f0;
+}
+.section {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.field-label {
+  font-size: 13px;
+  color: #94a3b8;
+  min-width: 70px;
+}
+.input {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  min-width: 160px;
+}
+.input--wide {
+  flex: 1;
+}
+.input:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+.textarea {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  width: 100%;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.textarea:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+.btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #334155;
+  color: #e2e8f0;
+}
+.btn:hover:not(:disabled) {
+  background: #475569;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn--loading {
+  background: #1d4ed8;
+  color: #bfdbfe;
+}
+.btn--success {
+  background: #166534;
+  color: #bbf7d0;
+}
+.btn--error {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+.msg--success {
+  color: #4ade80;
+  font-size: 12px;
+}
+.msg--error {
+  color: #f87171;
+  font-size: 12px;
+}
 </style>

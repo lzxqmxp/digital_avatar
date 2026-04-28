@@ -26,7 +26,7 @@ import {
   type AvatarStartResponse,
   type StreamStartRequest,
   type StreamStartResponse,
-  type MetricsResponse,
+  type MetricsResponse
 } from '@shared/types/api'
 
 function delay(ms: number): Promise<void> {
@@ -56,7 +56,7 @@ let mockConnectionId: string | null = null
 export async function mockCall<T>(
   path: string,
   _method: string,
-  body?: unknown,
+  body?: unknown
 ): Promise<ApiResponse<T>> {
   switch (path) {
     case ApiPaths.SESSION_START: {
@@ -67,7 +67,7 @@ export async function mockCall<T>(
       return ok<SessionStartResponse>({
         session_id: mockSessionId,
         state: 'running',
-        started_at: Date.now(),
+        started_at: Date.now()
       }) as ApiResponse<T>
     }
 
@@ -79,7 +79,7 @@ export async function mockCall<T>(
       return ok<SessionStopResponse>({
         session_id: id,
         state: 'stopped',
-        stopped_at: Date.now(),
+        stopped_at: Date.now()
       }) as ApiResponse<T>
     }
 
@@ -88,7 +88,7 @@ export async function mockCall<T>(
       return ok<SessionStatusResponse>({
         session_id: mockSessionId || 'mock-session',
         state: mockSessionState,
-        uptime_ms: Date.now() % 100000,
+        uptime_ms: Date.now() % 100000
       }) as ApiResponse<T>
     }
 
@@ -98,14 +98,14 @@ export async function mockCall<T>(
       if (req?.room_id === 'bad') {
         return err<LiveConnectResponse>(
           ErrorCode.AUTH_FAILED,
-          '认证失败，请重新登录',
+          '认证失败，请重新登录'
         ) as ApiResponse<T>
       }
       mockConnectionId = uuid()
       return ok<LiveConnectResponse>({
         connection_id: mockConnectionId,
         room_id: req?.room_id || 'mock-room',
-        connected_at: Date.now(),
+        connected_at: Date.now()
       }) as ApiResponse<T>
     }
 
@@ -116,7 +116,7 @@ export async function mockCall<T>(
       mockConnectionId = null
       return ok<LiveDisconnectResponse>({
         connection_id: connId,
-        disconnected_at: Date.now(),
+        disconnected_at: Date.now()
       }) as ApiResponse<T>
     }
 
@@ -126,13 +126,13 @@ export async function mockCall<T>(
       if (!req?.item?.text?.trim()) {
         return err<QueueEnqueueResponse>(
           ErrorCode.INVALID_TEXT,
-          '文本内容无效或包含违禁词汇',
+          '文本内容无效或包含违禁词汇'
         ) as ApiResponse<T>
       }
       return ok<QueueEnqueueResponse>({
         queue_id: uuid(),
         position: Math.floor(Math.random() * 5) + 1,
-        estimated_wait_ms: 2000,
+        estimated_wait_ms: 2000
       }) as ApiResponse<T>
     }
 
@@ -142,12 +142,12 @@ export async function mockCall<T>(
       if (!req?.item?.text?.trim()) {
         return err<QueueInsertResponse>(
           ErrorCode.INVALID_TEXT,
-          '文本内容无效或包含违禁词汇',
+          '文本内容无效或包含违禁词汇'
         ) as ApiResponse<T>
       }
       return ok<QueueInsertResponse>({
         queue_id: uuid(),
-        position: 0,
+        position: 0
       }) as ApiResponse<T>
     }
 
@@ -156,7 +156,7 @@ export async function mockCall<T>(
       const req = body as ScriptRewriteRequest
       return ok<ScriptRewriteResponse>({
         rewritten_text: `[改写] ${req?.original_text || ''}`,
-        tokens_used: 42,
+        tokens_used: 42
       }) as ApiResponse<T>
     }
 
@@ -167,7 +167,7 @@ export async function mockCall<T>(
       return ok<ModerationCheckResponse>({
         risk_level: isHigh ? 'high' : 'safe',
         flagged_terms: isHigh ? ['违禁'] : [],
-        suggestion: isHigh ? '请修改违禁内容后重试' : undefined,
+        suggestion: isHigh ? '请修改违禁内容后重试' : undefined
       }) as ApiResponse<T>
     }
 
@@ -177,7 +177,7 @@ export async function mockCall<T>(
       return ok<ReviewDecisionResponse>({
         review_id: req?.review_id || uuid(),
         decision: req?.decision || 'approve',
-        processed_at: Date.now(),
+        processed_at: Date.now()
       }) as ApiResponse<T>
     }
 
@@ -187,7 +187,7 @@ export async function mockCall<T>(
       return ok<TtsSynthesizeResponse>({
         audio_url: `mock://audio/${uuid()}.wav`,
         duration_ms: 1200,
-        voice_id: req?.voice_id || 'default',
+        voice_id: req?.voice_id || 'default'
       }) as ApiResponse<T>
     }
 
@@ -196,7 +196,7 @@ export async function mockCall<T>(
       return ok<AvatarStartResponse>({
         avatar_session_id: uuid(),
         stream_url: 'rtmp://localhost/mock',
-        started_at: Date.now(),
+        started_at: Date.now()
       }) as ApiResponse<T>
     }
 
@@ -206,7 +206,7 @@ export async function mockCall<T>(
       return ok<StreamStartResponse>({
         stream_id: uuid(),
         rtmp_url: req?.rtmp_url || 'rtmp://localhost/live',
-        started_at: Date.now(),
+        started_at: Date.now()
       }) as ApiResponse<T>
     }
 
@@ -219,7 +219,7 @@ export async function mockCall<T>(
         queue_depth: Math.floor(Math.random() * 10),
         uptime_ms: Date.now() % 100000,
         gpu_utilization: 0.3 + Math.random() * 0.4,
-        error_count: 0,
+        error_count: 0
       }) as ApiResponse<T>
     }
 
