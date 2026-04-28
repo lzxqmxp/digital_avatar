@@ -455,9 +455,16 @@
 
 - AI直播、数字人、设置三页已可操作，关键按钮具备成功/失败反馈与审计写入。
 
-4. [ ] M3 运营页面闭环（未开始）
+4. [x] M3 运营页面闭环（已落地）
 
-- 话术管理、AI回复、写话术、模型管理、直播账号、音转文字当前为占位模块。
+- 话术管理（ScriptPage.vue）：新建、保存、启用/禁用、批量删除、导入/导出全部按钮已实现。
+- AI回复（PolicyPage.vue）：新建策略、保存、测试、发布、回滚全部按钮已实现。
+- 写话术（WriterPage.vue）：生成、改写、敏感词检测、保存草稿、发布到话术库全部按钮已实现。
+- 模型管理（ModelPage.vue）：导入、校验、启用、回滚、删除全部按钮已实现。
+- 直播账号（AccountPage.vue）：新增、授权、启用/停用、连通性测试、删除全部按钮已实现。
+- 音转文字（AsrPage.vue）：开始/暂停/停止监听、纠错提交、导出全部按钮已实现。
+- 6 个页面已注册路由与侧边栏导航。
+- Mock handlers 已覆盖所有 M3 API 路径。
 
 5. [ ] M4 稳定性达标（未开始）
 
@@ -477,7 +484,7 @@
 2. [x] 契约层
 
 - button_id 动作字典已建立。
-- API 路径、请求/响应类型、错误码映射已建立。
+- API 路径、请求/响应类型、错误码映射已建立（含 M3 扩展）。
 
 3. [x] 核心页面（P0）
 
@@ -489,19 +496,23 @@
 
 - session/live/avatar store 已接入。
 - mock handlers 已覆盖 session/live/queue/rewrite/moderation/tts/avatar/stream/metrics。
+- mock handlers 已扩展覆盖 M3 全部 API 路径（scripts/policies/writer/models/accounts/asr）。
 
-5. [ ] 真实后端编排与跨进程链路
+5. [x] 运营页面（M3）
+
+- 话术管理、AI回复策略、写话术、模型管理、直播账号、音转文字 6 个页面已实现。
+- 所有按钮均有成功/失败反馈与审计写入。
+- 字段级校验（标题/内容/状态/版本/文件格式等）已落实。
+
+6. [ ] 真实后端编排与跨进程链路
 
 - 当前调用默认走 mock，尚未完成 Node <-> Python 的真实服务联调闭环。
-
-6. [ ] 运营页面与字段级校验完整实现
-
-- 文档中的 10 页面字段校验矩阵尚未全部落实到 UI 与后端校验逻辑。
 
 ### 12.3 核查依据（代码位置）
 
 1. 路由与核心页面：src/renderer/src/router/index.ts
 2. 核心页面实现：src/features/live/LivePage.vue、src/features/avatar/AvatarPage.vue、src/features/settings/SettingsPage.vue
-3. 动作与接口契约：src/shared/types/actions.ts、src/shared/types/api.ts
-4. API 客户端与 mock：src/shared/api/client.ts、runtime/mock/handlers.ts
-5. 状态管理与审计：src/shared/store/session.ts、src/shared/store/live.ts、src/shared/store/avatar.ts、src/shared/api/audit.ts
+3. 运营页面实现：src/features/script/ScriptPage.vue、src/features/reply/PolicyPage.vue、src/features/script/WriterPage.vue、src/features/avatar/ModelPage.vue、src/features/live/AccountPage.vue、src/features/asr/AsrPage.vue
+4. 动作与接口契约：src/shared/types/actions.ts、src/shared/types/api.ts
+5. API 客户端与 mock：src/shared/api/client.ts、runtime/mock/handlers.ts
+6. 状态管理与审计：src/shared/store/session.ts、src/shared/store/live.ts、src/shared/store/avatar.ts、src/shared/api/audit.ts

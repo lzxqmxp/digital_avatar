@@ -30,6 +30,25 @@ const stateColor: Record<string, string> = {
         <RouterLink to="/settings" class="nav-link" active-class="nav-link--active">
           <span class="nav-icon">⚙️</span> 设置
         </RouterLink>
+        <div class="nav-divider" />
+        <RouterLink to="/scripts" class="nav-link" active-class="nav-link--active">
+          <span class="nav-icon">📝</span> 话术管理
+        </RouterLink>
+        <RouterLink to="/policy" class="nav-link" active-class="nav-link--active">
+          <span class="nav-icon">🤖</span> AI回复
+        </RouterLink>
+        <RouterLink to="/writer" class="nav-link" active-class="nav-link--active">
+          <span class="nav-icon">✍️</span> 写话术
+        </RouterLink>
+        <RouterLink to="/models" class="nav-link" active-class="nav-link--active">
+          <span class="nav-icon">🧩</span> 模型管理
+        </RouterLink>
+        <RouterLink to="/accounts" class="nav-link" active-class="nav-link--active">
+          <span class="nav-icon">👤</span> 直播账号
+        </RouterLink>
+        <RouterLink to="/asr" class="nav-link" active-class="nav-link--active">
+          <span class="nav-icon">🎙️</span> 音转文字
+        </RouterLink>
       </nav>
       <div class="sidebar-status">
         <span
@@ -95,6 +114,12 @@ const stateColor: Record<string, string> = {
   background: #334155;
   color: #38bdf8;
   border-left: 3px solid #38bdf8;
+}
+
+.nav-divider {
+  height: 1px;
+  background: #334155;
+  margin: 6px 16px;
 }
 
 .nav-icon {
