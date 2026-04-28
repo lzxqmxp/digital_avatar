@@ -1,2 +1,2 @@
-// Feature: Avatar rendering and control
-export {}
+// Feature: Avatar
+export { default as AvatarPage } from './AvatarPage.vue'

@@ -1,2 +1,3 @@
 // Shared: API client utilities
-export {}
+export { callApi, apiClient } from './client'
+export { writeAudit, getAuditLog, clearAuditLog } from './audit'

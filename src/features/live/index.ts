@@ -1,2 +1,2 @@
-// Feature: Live streaming control
-export {}
+// Feature: Live streaming
+export { default as LivePage } from './LivePage.vue'

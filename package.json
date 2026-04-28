@@ -35,11 +35,13 @@
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.1",
     "eslint-plugin-vue": "^10.6.2",
+    "pinia": "^3.0.4",
     "prettier": "^3.7.4",
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
     "vue": "^3.5.25",
     "vue-eslint-parser": "^10.2.0",
+    "vue-router": "^5.0.6",
     "vue-tsc": "^3.1.6"
   }
 }

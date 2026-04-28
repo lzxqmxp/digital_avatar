@@ -1,2 +1,4 @@
 // Shared: Pinia store definitions
-export {}
+export { useSessionStore } from './session'
+export { useLiveStore } from './live'
+export { useAvatarStore } from './avatar'

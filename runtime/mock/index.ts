@@ -1,2 +1,2 @@
 // Runtime: Mock data and handlers
-export {}
+export { mockCall } from './handlers'

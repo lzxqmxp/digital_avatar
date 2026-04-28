@@ -6,6 +6,7 @@
     "src/renderer/src/**/*.vue",
     "src/shared/**/*",
     "src/features/**/*",
+    "runtime/**/*",
     "electron/preload/*.d.ts"
   ],
   "compilerOptions": {
@@ -14,7 +15,8 @@
     "paths": {
       "@renderer/*": ["src/renderer/src/*"],
       "@shared/*": ["src/shared/*"],
-      "@features/*": ["src/features/*"]
+      "@features/*": ["src/features/*"],
+      "@runtime/*": ["runtime/*"]
     }
   }
 }

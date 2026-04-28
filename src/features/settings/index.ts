@@ -1,2 +1,2 @@
 // Feature: Application settings
-export {}
+export { default as SettingsPage } from './SettingsPage.vue'
