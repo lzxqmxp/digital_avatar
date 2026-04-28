@@ -1,0 +1,2 @@
+// Feature: Application settings
+export {}
