@@ -74,8 +74,9 @@ async function onImportFile(e: Event) {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
-  const ext = '.' + file.name.split('.').pop()?.toLowerCase()
-  if (!['.pth', '.onnx', '.engine'].includes(ext)) {
+  const rawExt = file.name.split('.').pop()
+  const ext = rawExt ? '.' + rawExt.toLowerCase() : ''
+  if (!ext || !['.pth', '.onnx', '.engine'].includes(ext)) {
     setBtn('btn_model_import', 'error', '仅支持 .pth/.onnx/.engine')
     writeAudit({ session_id: sessionStore.sessionId || '', button_id: 'btn_model_import', action: '导入模型', result: 'failure', error_code: 'MODEL_FILE_INVALID' })
     target.value = ''
