@@ -1,2 +1,2 @@
 // Runtime: Platform adapters (CPU / cloud-GPU)
-export {}
+export { liveTalkingCall } from './livetalking'
