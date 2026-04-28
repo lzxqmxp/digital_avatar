@@ -1,1 +1,16 @@
-.history/
+node_modules
+dist
+dist-electron
+out
+.DS_Store
+.eslintcache
+*.log*
+
+# Environment files (keep templates, ignore secrets)
+.env.local
+.env.*.local
+
+# Build artifacts
+build/linux-unpacked
+build/win-unpacked
+build/mac

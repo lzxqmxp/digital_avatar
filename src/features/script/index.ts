@@ -1,0 +1,2 @@
+// Feature: Script management
+export {}
