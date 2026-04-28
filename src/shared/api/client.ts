@@ -1,4 +1,4 @@
-import { isMock } from '@shared/config/runtimeMode'
+import { isMock, isCpu } from '@shared/config/runtimeMode'
 import { ApiPaths, type ApiResponse } from '@shared/types/api'
 import type {
   SessionStartRequest,
@@ -39,6 +39,11 @@ export async function callApi<T>(
   if (isMock) {
     const { mockCall } = await import('@runtime/mock/handlers')
     return mockCall<T>(path, method, body)
+  }
+
+  if (isCpu) {
+    const { liveTalkingCall } = await import('@runtime/adapters/livetalking')
+    return liveTalkingCall<T>(path, method, body)
   }
 
   try {
