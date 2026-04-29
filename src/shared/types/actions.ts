@@ -11,6 +11,7 @@ export type ActionId =
   | 'btn_live_pause'
   | 'btn_live_stop'
   | 'sw_live_av_sync'
+  | 'sw_live_auto_queue'
   | 'btn_live_model_rotate'
   | 'btn_live_insert'
   | 'btn_live_send_text'

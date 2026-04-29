@@ -2,6 +2,14 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { IpcChannels } from '../../src/shared/types/ipc-channels'
+import {
+  disposeDouyinDirectClient,
+  getDouyinDirectStatus,
+  startDouyinDirectClient,
+  stopDouyinDirectClient
+} from './douyin-direct-client'
+import { closeMockApiDatabase, handleMockApiCall } from './mock-api-db'
 
 function createWindow(): void {
   // Create the browser window.
@@ -51,6 +59,26 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+  ipcMain.removeHandler('mock-api:call')
+  ipcMain.handle(
+    'mock-api:call',
+    (_event, payload: { path: string; method: string; body?: unknown }) => {
+      return handleMockApiCall(payload.path, payload.method, payload.body)
+    }
+  )
+
+  ipcMain.removeHandler(IpcChannels.DOUYIN_DIRECT_START)
+  ipcMain.handle(IpcChannels.DOUYIN_DIRECT_START, (_event, roomId: string) => {
+    return startDouyinDirectClient(roomId)
+  })
+
+  ipcMain.removeHandler(IpcChannels.DOUYIN_DIRECT_STOP)
+  ipcMain.handle(IpcChannels.DOUYIN_DIRECT_STOP, () => {
+    return stopDouyinDirectClient()
+  })
+
+  ipcMain.removeHandler(IpcChannels.DOUYIN_DIRECT_STATUS)
+  ipcMain.handle(IpcChannels.DOUYIN_DIRECT_STATUS, () => getDouyinDirectStatus())
 
   createWindow()
 
@@ -65,6 +93,9 @@ app.whenReady().then(() => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  void stopDouyinDirectClient()
+  disposeDouyinDirectClient()
+  closeMockApiDatabase()
   if (process.platform !== 'darwin') {
     app.quit()
   }

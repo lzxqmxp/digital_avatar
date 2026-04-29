@@ -496,7 +496,12 @@ export type ModelItem = {
 
 export type ModelListResponse = { items: ModelItem[]; total: number }
 
-export type ModelImportRequest = { name: string; engine_type: ModelEngineType; version: string; file_path: string }
+export type ModelImportRequest = {
+  name: string
+  engine_type: ModelEngineType
+  version: string
+  file_path: string
+}
 export type ModelImportResponse = ModelItem
 
 export type ModelVerifyRequest = { id: string }
@@ -559,7 +564,11 @@ export type AsrPauseResponse = { session_id: string; state: AsrState }
 export type AsrStopRequest = { session_id: string }
 export type AsrStopResponse = { session_id: string; state: AsrState; stopped_at: number }
 
-export type AsrCorrectionRequest = { session_id: string; segment_id: string; corrected_text: string }
+export type AsrCorrectionRequest = {
+  session_id: string
+  segment_id: string
+  corrected_text: string
+}
 export type AsrCorrectionResponse = { segment_id: string; updated_at: number }
 
 export type AsrExportRequest = { session_id: string; format: AsrExportFormat }

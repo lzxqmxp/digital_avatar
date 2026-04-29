@@ -14,6 +14,10 @@ export const IpcChannels = {
   LIVE_STOP: 'live:stop',
   LIVE_STATUS: 'live:status',
   LIVE_COMMENT: 'live:comment',
+  DOUYIN_DIRECT_START: 'douyin-direct:start',
+  DOUYIN_DIRECT_STOP: 'douyin-direct:stop',
+  DOUYIN_DIRECT_STATUS: 'douyin-direct:status',
+  DYCAST_RELAY_STATUS: 'dycast-relay:status',
 
   // ASR (Automatic Speech Recognition)
   ASR_START: 'asr:start',

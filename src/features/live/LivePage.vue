@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { apiClient } from '@shared/api/client'
-import { useLiveStore } from '@shared/store/live'
+import { useLiveStore, type LiveRoomEventType } from '@shared/store/live'
 import { useSessionStore } from '@shared/store/session'
 import { writeAudit } from '@shared/api/audit'
 import type { ButtonState } from '@shared/types/actions'
@@ -15,6 +15,114 @@ const sendText = ref('')
 const insertText = ref('')
 const pipelineStatus = ref('')
 const avSync = ref(false)
+const roomFeedRef = ref<HTMLElement | null>(null)
+const isRoomFeedPinned = ref(true)
+
+const ROOM_FEED_SCROLL_THRESHOLD = 50
+
+const roomEventTypeLabel: Record<LiveRoomEventType, string> = {
+  chat: '聊天',
+  gift: '礼物',
+  like: '点赞',
+  member: '进场',
+  social: '关注',
+  room_stats: '统计',
+  control: '控制',
+  system: '系统'
+}
+
+function roomEventTypeClass(type: LiveRoomEventType) {
+  return `room-event--${type}`
+}
+
+function handleRoomFeedScroll(event: Event) {
+  const target = event.target as HTMLDivElement | null
+  if (!target) {
+    return
+  }
+
+  const { scrollTop, clientHeight, scrollHeight } = target
+  isRoomFeedPinned.value = scrollTop + clientHeight >= scrollHeight - ROOM_FEED_SCROLL_THRESHOLD
+}
+
+function scrollRoomFeedToBottom(behavior: ScrollBehavior = 'smooth') {
+  const el = roomFeedRef.value
+  if (!el) {
+    return
+  }
+
+  el.scrollTo({
+    top: el.scrollHeight,
+    behavior
+  })
+  isRoomFeedPinned.value = true
+}
+
+watch(
+  () => liveStore.roomEvents.length,
+  async () => {
+    await nextTick()
+    if (isRoomFeedPinned.value) {
+      scrollRoomFeedToBottom('auto')
+    }
+  }
+)
+
+watch(
+  [() => sessionStore.sessionId, () => sessionStore.sessionState],
+  ([sessionId, sessionState]) => {
+    if (sessionId && sessionState === 'running') {
+      liveStore.setAutoQueueSession(sessionId)
+      return
+    }
+    liveStore.setAutoQueueSession(null)
+  },
+  { immediate: true }
+)
+
+const streamSourceLabel = computed(() => {
+  if (liveStore.streamSource === 'dycast') {
+    return '抖音直连'
+  }
+  if (liveStore.streamSource === 'mock') {
+    return 'Mock'
+  }
+  return '--'
+})
+
+const relayEndpoint = computed(() => {
+  if (!liveStore.relayStatus.started) {
+    return '未启动'
+  }
+  return liveStore.relayStatus.endpoint || '连接中'
+})
+
+const relayConnectionStatus = computed(() => {
+  if (!liveStore.relayStatus.started) {
+    return '未启动'
+  }
+  if (liveStore.relayStatus.connected) {
+    return '已连接'
+  }
+  if (liveStore.relayStatus.connecting) {
+    return '连接中'
+  }
+  return '未连接'
+})
+
+const relayLastMessageAt = computed(() => {
+  if (!liveStore.relayStatus.lastMessageAt) {
+    return '--'
+  }
+  return new Date(liveStore.relayStatus.lastMessageAt).toLocaleTimeString()
+})
+
+const autoQueueStatusText = computed(() => {
+  const sessionText = liveStore.autoQueue.sessionId
+    ? `会话 ${liveStore.autoQueue.sessionId.slice(0, 8)}`
+    : '未绑定会话'
+  return `${sessionText} | 成功 ${liveStore.autoQueue.success} | 失败 ${liveStore.autoQueue.failed} | 丢弃 ${liveStore.autoQueue.dropped}`
+})
 
 // Button states
 const btnStates = ref<Record<string, ButtonState>>({})
@@ -95,6 +203,18 @@ function onToggleAlert() {
     session_id: sessionStore.sessionId || '',
     button_id: 'sw_live_message_alert',
     action: '切换消息提醒',
+    result: 'success'
+  })
+}
+
+function onToggleAutoQueue(event: Event) {
+  const target = event.target as HTMLInputElement | null
+  const enabled = Boolean(target?.checked)
+  liveStore.setAutoQueueEnabled(enabled)
+  writeAudit({
+    session_id: sessionStore.sessionId || '',
+    button_id: 'sw_live_auto_queue',
+    action: enabled ? '开启弹幕自动入队' : '关闭弹幕自动入队',
     result: 'success'
   })
 }
@@ -501,6 +621,63 @@ async function onInitMessages() {
       </div>
     </section>
 
+    <!-- Room Event Stream -->
+    <section class="section">
+      <h2 class="section-title">直播房间实时信息流</h2>
+      <div class="room-stats-row">
+        <span class="metric-chip">房间 {{ liveStore.roomStats.roomId || '--' }}</span>
+        <span class="metric-chip">在线 {{ liveStore.roomStats.audienceCount }}</span>
+        <span class="metric-chip">粉丝 {{ liveStore.roomStats.followCount }}</span>
+        <span class="metric-chip">累计 {{ liveStore.roomStats.totalUserCount }}</span>
+        <span class="metric-chip">点赞 {{ liveStore.roomStats.likeCount }}</span>
+        <span class="metric-chip">来源 {{ streamSourceLabel }}</span>
+        <span class="metric-chip">直连 {{ relayEndpoint }}</span>
+        <span class="metric-chip">状态 {{ relayConnectionStatus }}</span>
+        <span class="metric-chip">重连 {{ liveStore.relayStatus.reconnectCount }}</span>
+        <span class="metric-chip">最近消息 {{ relayLastMessageAt }}</span>
+      </div>
+
+      <div class="msg-row">
+        <span class="queue-meta">{{ autoQueueStatusText }}</span>
+        <span v-if="liveStore.relayStatus.error" class="msg--error">{{
+          liveStore.relayStatus.error
+        }}</span>
+        <span v-if="liveStore.autoQueue.lastError" class="msg--error">{{
+          liveStore.autoQueue.lastError
+        }}</span>
+      </div>
+
+      <div ref="roomFeedRef" class="room-feed" @scroll="handleRoomFeedScroll">
+        <div
+          v-for="event in liveStore.roomEvents"
+          :key="event.id"
+          class="room-event-item"
+          :class="roomEventTypeClass(event.type)"
+        >
+          <span class="room-event-time">{{ new Date(event.ts).toLocaleTimeString() }}</span>
+          <span class="room-event-tag">{{ roomEventTypeLabel[event.type] }}</span>
+          <div class="room-event-main">
+            <span class="room-event-user">{{ event.user }}</span>
+            <span class="room-event-content">{{ event.content }}</span>
+          </div>
+        </div>
+        <div v-if="liveStore.roomEvents.length === 0" class="message-empty">
+          连接直播间后开始滚动显示实时房间信息
+        </div>
+      </div>
+
+      <div class="room-feed-tools">
+        <button
+          v-if="!isRoomFeedPinned && liveStore.roomEvents.length > 0"
+          class="btn"
+          type="button"
+          @click="scrollRoomFeedToBottom()"
+        >
+          回到底部
+        </button>
+      </div>
+    </section>
+
     <!-- Session Controls -->
     <section class="section">
       <h2 class="section-title">会话控制</h2>
@@ -579,6 +756,15 @@ async function onInitMessages() {
           <input type="checkbox" v-model="avSync" />
           <span>开启音画同步</span>
           <span class="toggle-state">{{ avSync ? '开' : '关' }}</span>
+        </label>
+        <label class="toggle-label" id="sw_live_auto_queue">
+          <input
+            type="checkbox"
+            :checked="liveStore.autoQueue.enabled"
+            @change="onToggleAutoQueue"
+          />
+          <span>弹幕自动入队</span>
+          <span class="toggle-state">{{ liveStore.autoQueue.enabled ? '开' : '关' }}</span>
         </label>
         <button
           id="btn_live_tts_preview"
@@ -786,6 +972,10 @@ async function onInitMessages() {
   color: #f87171;
   font-size: 12px;
 }
+.queue-meta {
+  color: #94a3b8;
+  font-size: 12px;
+}
 .toggle-label {
   display: flex;
   align-items: center;
@@ -815,6 +1005,117 @@ async function onInitMessages() {
   color: #94a3b8;
   border: 1px solid #334155;
 }
+
+.room-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.metric-chip {
+  font-size: 12px;
+  color: #cbd5e1;
+  background: #0f172a;
+  border: 1px solid #334155;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.room-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+
+.room-event-item {
+  display: grid;
+  grid-template-columns: 66px 44px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  background: #0f172a;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+  padding: 6px 8px;
+}
+
+.room-event-time {
+  color: #64748b;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.room-event-tag {
+  font-size: 11px;
+  color: #e2e8f0;
+  background: #334155;
+  border-radius: 4px;
+  text-align: center;
+  line-height: 1.5;
+  padding: 1px 4px;
+}
+
+.room-event-main {
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.room-event-user {
+  color: #38bdf8;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.room-event-content {
+  color: #e2e8f0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.room-feed-tools {
+  min-height: 32px;
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.room-event--chat .room-event-tag {
+  background: #0c4a6e;
+}
+
+.room-event--gift .room-event-tag {
+  background: #78350f;
+}
+
+.room-event--like .room-event-tag {
+  background: #7f1d1d;
+}
+
+.room-event--member .room-event-tag {
+  background: #14532d;
+}
+
+.room-event--social .room-event-tag {
+  background: #134e4a;
+}
+
+.room-event--room_stats .room-event-tag {
+  background: #334155;
+}
+
+.room-event--control .room-event-tag {
+  background: #78350f;
+}
+
+.room-event--system .room-event-tag {
+  background: #4c1d95;
+}
+
 .pipeline-status {
   font-size: 12px;
   font-weight: 600;
