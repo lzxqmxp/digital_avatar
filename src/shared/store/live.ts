@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { apiClient } from '@shared/api/client'
+import { DyCast } from '@shared/dycast-core/dycast'
 
 export interface LiveMessage {
   id: string
@@ -97,7 +98,7 @@ const mockChatTexts = [
 const mockGiftNames = ['小心心', '荧光棒', '玫瑰', '掌声']
 
 let roomStreamTimer: ReturnType<typeof setInterval> | null = null
-let stopLiveCommentListener: (() => void) | null = null
+let dycastClient: DyCast | null = null
 let roomEventSeq = 0
 let liveMessageSeq = 0
 let seenDycastMessageIds = new Set<string>()
@@ -241,7 +242,6 @@ export const useLiveStore = defineStore('live', {
         connection_id: this.connectionId || ''
       })
       if (res.ok) {
-        await this.stopDouyinDirect()
         this.stopRoomStream()
         this.connectionId = null
         this.isConnected = false
@@ -606,95 +606,47 @@ export const useLiveStore = defineStore('live', {
       }
     },
 
-    async refreshDouyinDirectStatus(): Promise<DouyinDirectStatus | null> {
-      if (typeof window === 'undefined' || !window.api) {
-        return null
+    startIntegratedDycastStream(): boolean {
+      const roomNum = this.roomStats.roomId.trim()
+      if (!roomNum) {
+        return false
       }
-      if (typeof window.api.getDouyinDirectStatus !== 'function') {
-        return null
+
+      if (dycastClient) {
+        dycastClient.close()
+        dycastClient = null
       }
 
       try {
-        const status = await window.api.getDouyinDirectStatus()
-        this.relayStatus = { ...status }
-        return this.relayStatus
-      } catch {
-        return null
-      }
-    },
+        const client = new DyCast(roomNum)
+        dycastClient = client
 
-    async stopDouyinDirect(): Promise<void> {
-      if (typeof window === 'undefined' || !window.api) {
-        return
-      }
-      if (typeof window.api.stopDouyinDirect !== 'function') {
-        return
-      }
-
-      try {
-        const status = await window.api.stopDouyinDirect()
-        this.relayStatus = { ...status }
-      } catch {
-        // ignore stop errors during teardown
-      }
-    },
-
-    startDouyinDirectStream(): boolean {
-      if (typeof window === 'undefined' || !window.api) {
-        return false
-      }
-
-      if (typeof window.api.onLiveComment !== 'function') {
-        return false
-      }
-
-      if (typeof window.api.startDouyinDirect !== 'function') {
-        return false
-      }
-
-      if (typeof window.api.getDouyinDirectStatus !== 'function') {
-        return false
-      }
-
-      stopLiveCommentListener = window.api.onLiveComment((payload: unknown) => {
-        this.streamSource = 'dycast'
-        this.consumeDycastEnvelope(payload)
-      })
-
-      this.pushRoomEvent('system', '系统', '已订阅内置抖音直连通道，正在建立连接...')
-
-      void window.api
-        .startDouyinDirect(this.roomStats.roomId)
-        .then((status) => {
-          this.relayStatus = { ...status }
-
-          if (!status || !status.started) {
-            this.pushRoomEvent('control', '系统', '抖音直连启动失败，已回退到模拟流')
-            this.startMockRoomStream()
-            return
-          }
-
-          if (status.connected || status.connecting) {
-            this.streamSource = 'dycast'
-          }
-
-          const endpointText = status.endpoint || '待连接'
-          this.pushRoomEvent(
-            'system',
-            '系统',
-            status.connected
-              ? `抖音直连已接入，地址 ${endpointText}`
-              : `抖音直连已启动，正在连接 ${endpointText}`
-          )
-
-          void this.refreshDouyinDirectStatus()
-        })
-        .catch(() => {
-          this.pushRoomEvent('control', '系统', '抖音直连状态读取失败，已回退到模拟流')
-          this.startMockRoomStream()
+        client.on('open', (_event, info) => {
+          this.streamSource = 'dycast'
+          this.consumeDycastLiveInfo(info as unknown)
+          this.pushRoomEvent('system', '系统', 'dycast_1 内置集成通道已建立')
         })
 
-      return true
+        client.on('message', (messages) => {
+          this.streamSource = 'dycast'
+          this.relayStatus.lastMessageAt = Date.now()
+          this.consumeDycastMessages(messages as unknown)
+        })
+
+        client.on('close', (code, reason) => {
+          this.pushRoomEvent('control', '系统', `dycast 连接关闭(${code}): ${reason || 'closed'}`)
+        })
+
+        client.on('error', (error) => {
+          this.pushRoomEvent('control', '系统', `dycast 连接异常: ${error.message || 'unknown'}`)
+        })
+
+        void client.connect()
+        return true
+      } catch {
+        dycastClient = null
+        return false
+      }
     },
 
     startMockRoomStream() {
@@ -765,25 +717,23 @@ export const useLiveStore = defineStore('live', {
       seenDycastMessageIds = new Set<string>()
       this.resetAutoQueueMetrics()
 
-      const usingDirectClient = this.startDouyinDirectStream()
-      if (!usingDirectClient) {
-        this.pushRoomEvent('system', '系统', '未检测到主进程抖音直连能力，已回退到模拟流')
+      const started = this.startIntegratedDycastStream()
+      if (!started) {
+        this.pushRoomEvent('control', '系统', 'dycast_1 集成启动失败，已回退到模拟流')
         this.startMockRoomStream()
       }
     },
 
     stopRoomStream() {
-      if (stopLiveCommentListener) {
-        stopLiveCommentListener()
-        stopLiveCommentListener = null
+      if (dycastClient) {
+        dycastClient.close()
+        dycastClient = null
       }
 
       if (roomStreamTimer) {
         clearInterval(roomStreamTimer)
         roomStreamTimer = null
       }
-
-      void this.stopDouyinDirect()
 
       seenDycastMessageIds = new Set<string>()
       this.autoQueue.pending = 0

@@ -9,6 +9,11 @@ import {
   startDouyinDirectClient,
   stopDouyinDirectClient
 } from './douyin-direct-client'
+import {
+  getDycastRelayStatus,
+  startDycastRelayServer,
+  stopDycastRelayServer
+} from './dycast-relay-server'
 import { closeMockApiDatabase, handleMockApiCall } from './mock-api-db'
 
 function createWindow(): void {
@@ -68,8 +73,19 @@ app.whenReady().then(() => {
   )
 
   ipcMain.removeHandler(IpcChannels.DOUYIN_DIRECT_START)
-  ipcMain.handle(IpcChannels.DOUYIN_DIRECT_START, (_event, roomId: string) => {
-    return startDouyinDirectClient(roomId)
+  ipcMain.handle(IpcChannels.DOUYIN_DIRECT_START, async (_event, roomId: string) => {
+    try {
+      return await startDouyinDirectClient(roomId)
+    } catch (error) {
+      const status = getDouyinDirectStatus()
+      return {
+        ...status,
+        started: false,
+        connecting: false,
+        connected: false,
+        error: error instanceof Error ? error.message : 'douyin direct start failed'
+      }
+    }
   })
 
   ipcMain.removeHandler(IpcChannels.DOUYIN_DIRECT_STOP)
@@ -79,6 +95,10 @@ app.whenReady().then(() => {
 
   ipcMain.removeHandler(IpcChannels.DOUYIN_DIRECT_STATUS)
   ipcMain.handle(IpcChannels.DOUYIN_DIRECT_STATUS, () => getDouyinDirectStatus())
+
+  startDycastRelayServer()
+  ipcMain.removeHandler(IpcChannels.DYCAST_RELAY_STATUS)
+  ipcMain.handle(IpcChannels.DYCAST_RELAY_STATUS, () => getDycastRelayStatus())
 
   createWindow()
 
@@ -95,6 +115,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   void stopDouyinDirectClient()
   disposeDouyinDirectClient()
+  stopDycastRelayServer()
   closeMockApiDatabase()
   if (process.platform !== 'darwin') {
     app.quit()

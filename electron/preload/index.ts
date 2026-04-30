@@ -20,6 +20,9 @@ const api = {
   },
   getDouyinDirectStatus: () => {
     return electronAPI.ipcRenderer.invoke(IpcChannels.DOUYIN_DIRECT_STATUS)
+  },
+  getDycastRelayStatus: () => {
+    return electronAPI.ipcRenderer.invoke(IpcChannels.DYCAST_RELAY_STATUS)
   }
 }
 

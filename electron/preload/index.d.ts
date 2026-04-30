@@ -17,6 +17,13 @@ interface RendererBridgeApi {
   startDouyinDirect: (roomId: string) => Promise<DouyinDirectStatus>
   stopDouyinDirect: () => Promise<DouyinDirectStatus>
   getDouyinDirectStatus: () => Promise<DouyinDirectStatus>
+  getDycastRelayStatus: () => Promise<{
+    host: string
+    port: number
+    started: boolean
+    clientCount: number
+    lastMessageAt: number | null
+  }>
 }
 
 declare global {

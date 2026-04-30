@@ -24,6 +24,7 @@ const navGroups: NavGroup[] = [
     label: '主控面板',
     items: [
       { to: '/live', label: 'AI直播', short: '直' },
+      { to: '/dycast', label: 'DyCast', short: '抖' },
       { to: '/avatar', label: '数字人', short: '数' },
       { to: '/settings', label: '设置', short: '设' }
     ]
@@ -45,6 +46,10 @@ const routeMeta: Record<string, { title: string; subtitle: string }> = {
   '/live': {
     title: 'AI直播主控台',
     subtitle: '连接直播、控制会话、管理播报队列。'
+  },
+  '/dycast': {
+    title: 'DyCast 委托控制台',
+    subtitle: '内嵌 dycast_1 页面，负责抖音连接与弹幕转发。'
   },
   '/avatar': {
     title: '数字人控制台',

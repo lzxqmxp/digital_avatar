@@ -12,6 +12,10 @@ const router = createRouter({
       component: () => import('@features/live/LivePage.vue')
     },
     {
+      path: '/dycast',
+      component: () => import('@features/live/DycastDelegatePage.vue')
+    },
+    {
       path: '/avatar',
       component: () => import('@features/avatar/AvatarPage.vue')
     },

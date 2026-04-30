@@ -129,6 +129,19 @@ function broadcastLiveComment(payload: DycastRelayEnvelope): void {
   }
 }
 
+function broadcastRelayClient(payload: DycastRelayEnvelope): void {
+  if (!relayServer) {
+    return
+  }
+
+  const serialized = JSON.stringify(payload)
+  for (const client of relayServer.clients) {
+    if (client.readyState === 1) {
+      client.send(serialized)
+    }
+  }
+}
+
 export function startDycastRelayServer(): DycastRelayStatus {
   if (relayServer) {
     return getDycastRelayStatus()
@@ -161,6 +174,7 @@ export function startDycastRelayServer(): DycastRelayStatus {
       lastMessageAt = Date.now()
       for (const payload of payloads) {
         broadcastLiveComment(payload)
+        broadcastRelayClient(payload)
       }
     })
 
