@@ -508,11 +508,49 @@
 
 - 当前调用默认走 mock，尚未完成 Node <-> Python 的真实服务联调闭环。
 
-### 12.3 核查依据（代码位置）
+## 12.3 核查依据（代码位置与映射）
 
-1. 路由与核心页面：src/renderer/src/router/index.ts
-2. 核心页面实现：src/features/live/LivePage.vue、src/features/avatar/AvatarPage.vue、src/features/settings/SettingsPage.vue
-3. 运营页面实现：src/features/script/ScriptPage.vue、src/features/reply/PolicyPage.vue、src/features/script/WriterPage.vue、src/features/avatar/ModelPage.vue、src/features/live/AccountPage.vue、src/features/asr/AsrPage.vue
+1. 路由与页面注册：src/renderer/src/router/index.ts
+2. 核心页面实现：
+   - AI直播：src/features/live/LivePage.vue
+   - 数字人：src/features/avatar/AvatarPage.vue
+   - 设置：src/features/settings/SettingsPage.vue
+3. 运营与管理页面：
+   - 话术管理：src/features/script/ScriptPage.vue
+   - AI回复策略：src/features/reply/PolicyPage.vue
+   - 写话术：src/features/script/WriterPage.vue
+   - 模型管理：src/features/avatar/ModelPage.vue
+   - 直播账号：src/features/live/AccountPage.vue
+   - 音转文字：src/features/asr/AsrPage.vue
 4. 动作与接口契约：src/shared/types/actions.ts、src/shared/types/api.ts
-5. API 客户端与 mock：src/shared/api/client.ts、runtime/mock/handlers.ts
+5. API 客户端与 mock 实现：src/shared/api/client.ts、runtime/mock/handlers.ts
 6. 状态管理与审计：src/shared/store/session.ts、src/shared/store/live.ts、src/shared/store/avatar.ts、src/shared/api/audit.ts
+
+## 13. mock/真实链路状态说明（2026-04-30）
+
+- 当前所有页面按钮与主流程均已对接 mock handlers，mock handlers 覆盖全部 API 路径与状态流转。
+- Node <-> Python 真实服务编排尚未联调，所有推理、TTS、推流等链路默认走 mock。
+- 真实链路联调需补充：
+  1. Node 主控进程与 Python FastAPI 服务的 HTTP 通信实现（接口见第5节）。
+  2. Python 侧各服务（ASR/TTS/Avatar/Media）需实现对应 API。
+  3. 前端配置切换真实/模拟链路能力。
+
+## 14. 下一步开发任务（plan-v6 路线）
+
+1. Node 主控与 Python 服务的 HTTP 接口联调：
+   - 完成 /session/init、/audio/push、/infer/frame、/stream/publish、/session/teardown 等接口的真实调用与回执。
+   - 重点保障 session 启动、推理首帧、推流首帧的端到端闭环。
+2. Python 侧服务补全：
+   - FastAPI 服务需实现上述接口的业务逻辑与健康检查。
+   - 支持本地 GPU 推理（Wav2Lip）、音频切片、TTS 云端调用。
+3. 前端链路切换能力：
+   - 增加“mock/真实链路”切换配置项，便于开发与测试。
+4. 指标与日志：
+   - 完善端到端时延、inferfps、finalfps、queue_usage_ratio、queue_drop_count 等指标采集与前端展示。
+   - 按钮级操作日志与错误码落库。
+5. 稳定性与恢复能力：
+   - 实现健康检查、子进程自动拉起、推流/推理链路自动恢复。
+6. Beta/P1 功能预埋：
+   - 虚拟摄像头、OBS 去重相关接口与 UI 预埋。
+7. 文档与测试：
+   - 持续补充接口文档、字段校验矩阵与端到端异常剧本。
