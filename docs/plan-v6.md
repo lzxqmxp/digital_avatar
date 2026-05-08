@@ -10,25 +10,25 @@
 
 当前项目文档体系如下，按阅读与使用顺序排列：
 
-| 文档名称 | 路径 | 用途 | 依赖关系 |
-|---------|------|------|---------|
-| 开发文档索引 V7 | [development-doc-index-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/development-doc-index-v7.md) | 文档体系导航入口 | - |
-| 需求规格 V7 | [requirements-spec-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/requirements-spec-v7.md) | 按钮级需求定义、验收标准 | - |
-| 技术设计 V7 | [technical-design-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/technical-design-v7.md) | 架构、接口、里程碑 | 依赖需求规格 |
-| Plan V6 (本文档) | [plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md) | 完整规划基线、里程碑核查 | 依赖前两者 |
-| 按钮-API映射 V1 | [button-action-api-map-v1.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/button-action-api-map-v1.md) | 按钮到接口的映射表 | 依赖计划与设计 |
-| VibeCoding落地计划 V1 | [vibecoding-plan-v1.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/vibecoding-plan-v1.md) | AI开发指导文档 | 依赖所有设计文档 |
+| 文档名称              | 路径                                                                                                                        | 用途                     | 依赖关系         |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------- |
+| 开发文档索引 V7       | [development-doc-index-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/development-doc-index-v7.md) | 文档体系导航入口         | -                |
+| 需求规格 V7           | [requirements-spec-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/requirements-spec-v7.md)         | 按钮级需求定义、验收标准 | -                |
+| 技术设计 V7           | [technical-design-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/technical-design-v7.md)           | 架构、接口、里程碑       | 依赖需求规格     |
+| Plan V6 (本文档)      | [plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md)                                   | 完整规划基线、里程碑核查 | 依赖前两者       |
+| 按钮-API映射 V1       | [button-action-api-map-v1.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/button-action-api-map-v1.md) | 按钮到接口的映射表       | 依赖计划与设计   |
+| VibeCoding落地计划 V1 | [vibecoding-plan-v1.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/vibecoding-plan-v1.md)             | AI开发指导文档           | 依赖所有设计文档 |
 
 ### 代码层对应关系
 
-| 文档模块 | 代码实现路径 | 说明 |
-|---------|------------|------|
-| 按钮动作定义 | [src/shared/types/actions.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/actions.ts) | ActionId枚举与审计字段 |
-| API接口契约 | [src/shared/types/api.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/api.ts) | ApiPaths、ErrorCodes、请求/响应类型 |
-| 运行模式配置 | [src/shared/config/runtimeMode.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/config/runtimeMode.ts) | dev-mock/dev-cpu/prod-cloud-gpu |
-| 10个业务页面 | [src/features/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/) | AI直播、数字人、设置、话术管理等 |
-| Mock服务 | [runtime/mock/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/) | 开发阶段Mock实现 |
-| 运行时适配器 | [runtime/adapters/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/adapters/) | 真实接口适配器 |
+| 文档模块     | 代码实现路径                                                                                                                     | 说明                                |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| 按钮动作定义 | [src/shared/types/actions.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/actions.ts)           | ActionId枚举与审计字段              |
+| API接口契约  | [src/shared/types/api.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/api.ts)                   | ApiPaths、ErrorCodes、请求/响应类型 |
+| 运行模式配置 | [src/shared/config/runtimeMode.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/config/runtimeMode.ts) | dev-mock/dev-cpu/prod-cloud-gpu     |
+| 10个业务页面 | [src/features/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/)                                       | AI直播、数字人、设置、话术管理等    |
+| Mock服务     | [runtime/mock/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/)                                       | 开发阶段Mock实现                    |
+| 运行时适配器 | [runtime/adapters/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/adapters/)                               | 真实接口适配器                      |
 
 ## 1. 冻结约束
 
@@ -607,21 +607,21 @@
 
 > 统计口径说明：mock 能力已按开发完成度标记为完成（开发层面可用），但真实 GPU 性能与稳定性指标尚未在物理环境验收。
 
-| 维度 | 目标 | 当前状态 | 完成度 | 依据文档/代码 | 备注 |
-| --- | --- | --- | --- | --- | --- |
-| 总体规划基线 | 形成唯一执行基线并可追踪 | 已建立并在持续更新 | 95% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [docs/plan.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan.md) | V6 已成为工作区执行口径，文档间引用已完善 |
-| 需求规格 | 按钮级需求、验收标准、错误反馈统一 | 已完成 | 95% | [docs/requirements-spec-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/requirements-spec-v7.md) | 可直接用于测试用例设计 |
-| 技术设计 | 架构、接口、里程碑、恢复策略 | 已完成 | 90% | [docs/technical-design-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/technical-design-v7.md) | 需持续与真实联调结果同步 |
-| 按钮到接口映射 | button_id 到 action/api/error 映射 | 已完成 | 95% | [docs/button-action-api-map-v1.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/button-action-api-map-v1.md), [src/shared/types/actions.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/actions.ts), [src/shared/types/api.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/api.ts) | 映射表完整，与代码对齐 |
-| 运行模式体系 | dev-mock/dev-cpu/prod-cloud-gpu 可切换 | 已完成 | 100% | [src/shared/config/runtimeMode.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/config/runtimeMode.ts) | 已具备三模式基础 |
-| M0 架构冻结 | 契约、类型、状态机基础冻结 | 已完成 | 100% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md) | 与代码实现一致 |
-| M1 主链路打通 | 直播到推理推流端到端闭环 | Mock 层面完成 | 75% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [src/shared/api/client.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/api/client.ts), [runtime/adapters/livetalking.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/adapters/livetalking.ts) | mock 已打通；真实链路待联调 |
-| M2 核心页面闭环 | AI直播/数字人/设置可操作 | 已完成 | 95% | [src/renderer/src/router/index.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/renderer/src/router/index.ts) | 交互已通，按钮已绑定 ActionId |
-| M3 运营页面闭环 | 10 个运营页面功能闭环 | 已完成 | 95% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md) | 所有按钮实现、路由、页面均已到位 |
-| Store 与 Mock 服务 | 支撑开发联调与状态流转 | 已完成（开发层面） | 90% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [runtime/mock/handlers.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/handlers.ts), [runtime/mock/index.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/index.ts) | 可支持完整开发联调 |
-| 真实后端编排 | Node 到 Python 真实服务联调 | 未完成 | 25% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [runtime/adapters/livetalking.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/adapters/livetalking.ts) | 核心缺口，框架已预留位置 |
-| M4 稳定性达标 | 8 小时稳定、恢复率、指标看板 | 未开始 | 15% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [src/shared/api/audit.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/api/audit.ts) | 尚未形成完整实测报告 |
-| M5 Beta 增强 | OBS 去重、虚拟摄像头 | 未开始 | 10% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md) | 按规划保持 P1 |
+| 维度               | 目标                                   | 当前状态           | 完成度 | 依据文档/代码                                                                                                                                                                                                                                                                                                                                                            | 备注                                      |
+| ------------------ | -------------------------------------- | ------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
+| 总体规划基线       | 形成唯一执行基线并可追踪               | 已建立并在持续更新 | 95%    | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [docs/plan.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan.md)                                                                                                                                                                                 | V6 已成为工作区执行口径，文档间引用已完善 |
+| 需求规格           | 按钮级需求、验收标准、错误反馈统一     | 已完成             | 95%    | [docs/requirements-spec-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/requirements-spec-v7.md)                                                                                                                                                                                                                                                 | 可直接用于测试用例设计                    |
+| 技术设计           | 架构、接口、里程碑、恢复策略           | 已完成             | 90%    | [docs/technical-design-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/technical-design-v7.md)                                                                                                                                                                                                                                                   | 需持续与真实联调结果同步                  |
+| 按钮到接口映射     | button_id 到 action/api/error 映射     | 已完成             | 95%    | [docs/button-action-api-map-v1.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/button-action-api-map-v1.md), [src/shared/types/actions.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/actions.ts), [src/shared/types/api.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/api.ts) | 映射表完整，与代码对齐                    |
+| 运行模式体系       | dev-mock/dev-cpu/prod-cloud-gpu 可切换 | 已完成             | 100%   | [src/shared/config/runtimeMode.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/config/runtimeMode.ts)                                                                                                                                                                                                                                         | 已具备三模式基础                          |
+| M0 架构冻结        | 契约、类型、状态机基础冻结             | 已完成             | 100%   | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md)                                                                                                                                                                                                                                                                           | 与代码实现一致                            |
+| M1 主链路打通      | 直播到推理推流端到端闭环               | Mock 层面完成      | 75%    | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [src/shared/api/client.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/api/client.ts), [runtime/adapters/livetalking.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/adapters/livetalking.ts)                         | mock 已打通；真实链路待联调               |
+| M2 核心页面闭环    | AI直播/数字人/设置可操作               | 已完成             | 95%    | [src/renderer/src/router/index.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/renderer/src/router/index.ts)                                                                                                                                                                                                                                         | 交互已通，按钮已绑定 ActionId             |
+| M3 运营页面闭环    | 10 个运营页面功能闭环                  | 已完成             | 95%    | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md)                                                                                                                                                                                                                                                                           | 所有按钮实现、路由、页面均已到位          |
+| Store 与 Mock 服务 | 支撑开发联调与状态流转                 | 已完成（开发层面） | 90%    | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [runtime/mock/handlers.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/handlers.ts), [runtime/mock/index.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/index.ts)                                             | 可支持完整开发联调                        |
+| 真实后端编排       | Node 到 Python 真实服务联调            | 未完成             | 25%    | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [runtime/adapters/livetalking.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/adapters/livetalking.ts)                                                                                                                                           | 核心缺口，框架已预留位置                  |
+| M4 稳定性达标      | 8 小时稳定、恢复率、指标看板           | 未开始             | 15%    | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [src/shared/api/audit.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/api/audit.ts)                                                                                                                                                           | 尚未形成完整实测报告                      |
+| M5 Beta 增强       | OBS 去重、虚拟摄像头                   | 未开始             | 10%    | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md)                                                                                                                                                                                                                                                                           | 按规划保持 P1                             |
 
 ### 15.1 当前总评
 

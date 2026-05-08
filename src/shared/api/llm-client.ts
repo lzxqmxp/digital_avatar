@@ -17,7 +17,8 @@ type LlmProviderConfig = {
 
 function getLlmConfig(): LlmProviderConfig | null {
   const apiKey = import.meta.env.VITE_LLM_API_KEY as string | undefined
-  const baseUrl = (import.meta.env.VITE_LLM_BASE_URL as string | undefined) ?? 'https://api.openai.com/v1'
+  const baseUrl =
+    (import.meta.env.VITE_LLM_BASE_URL as string | undefined) ?? 'https://api.openai.com/v1'
   const model = (import.meta.env.VITE_LLM_MODEL as string | undefined) ?? 'gpt-4o-mini'
 
   if (!apiKey) return null
@@ -163,10 +164,7 @@ export type SensitiveWordResult = {
  */
 const BUILTIN_SENSITIVE_WORDS = ['违禁', '敏感词', '违规', '赌博', '色情', '诈骗', '暴力', '血腥']
 
-export function localSensitiveCheck(
-  text: string,
-  customWords?: string[]
-): SensitiveWordResult {
+export function localSensitiveCheck(text: string, customWords?: string[]): SensitiveWordResult {
   const words = customWords && customWords.length > 0 ? customWords : BUILTIN_SENSITIVE_WORDS
   const hit = words.filter((w) => text.includes(w))
   return {

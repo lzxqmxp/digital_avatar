@@ -65,18 +65,18 @@ src/renderer/             ← 渲染进程（Vue 3 SPA）
 
 ### 前端页面（src/features/）
 
-| 路由 | 页面 | 用途 |
-|-------|------|---------|
-| `/live` | `live/LivePage.vue` | AI 直播控制面板（连接、会话、队列） |
-| `/dycast` | `live/DycastDelegatePage.vue` | 嵌入 dycast_1 页面，用于抖音连接 |
-| `/avatar` | `avatar/AvatarPage.vue` | 数字人控制（引擎、预览） |
-| `/models` | `avatar/ModelPage.vue` | 模型版本库（导入、校验、启用） |
-| `/settings` | `settings/SettingsPage.vue` | 系统设置 |
-| `/scripts` | `script/ScriptPage.vue` | 话术管理 CRUD |
-| `/writer` | `script/WriterPage.vue` | 话术编写工作台（生成、改写、敏感词检测） |
-| `/policy` | `reply/PolicyPage.vue` | AI 回复策略配置 |
-| `/accounts` | `live/AccountPage.vue` | 直播账号管理 |
-| `/asr` | `asr/AsrPage.vue` | 语音识别中心 |
+| 路由        | 页面                          | 用途                                     |
+| ----------- | ----------------------------- | ---------------------------------------- |
+| `/live`     | `live/LivePage.vue`           | AI 直播控制面板（连接、会话、队列）      |
+| `/dycast`   | `live/DycastDelegatePage.vue` | 嵌入 dycast_1 页面，用于抖音连接         |
+| `/avatar`   | `avatar/AvatarPage.vue`       | 数字人控制（引擎、预览）                 |
+| `/models`   | `avatar/ModelPage.vue`        | 模型版本库（导入、校验、启用）           |
+| `/settings` | `settings/SettingsPage.vue`   | 系统设置                                 |
+| `/scripts`  | `script/ScriptPage.vue`       | 话术管理 CRUD                            |
+| `/writer`   | `script/WriterPage.vue`       | 话术编写工作台（生成、改写、敏感词检测） |
+| `/policy`   | `reply/PolicyPage.vue`        | AI 回复策略配置                          |
+| `/accounts` | `live/AccountPage.vue`        | 直播账号管理                             |
+| `/asr`      | `asr/AsrPage.vue`             | 语音识别中心                             |
 
 ### 共享层（src/shared/）
 

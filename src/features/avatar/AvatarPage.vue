@@ -328,16 +328,8 @@ async function onStop() {
     <section class="section" v-if="avatarStore.isRunning">
       <h2 class="section-title">数字人画面</h2>
       <div class="video-wrapper" :class="{ 'video-wrapper--hidden': !avatarStore.remoteStream }">
-        <video
-          ref="videoEl"
-          class="video-player"
-          autoplay
-          playsinline
-          muted
-        ></video>
-        <div v-if="!avatarStore.remoteStream" class="video-placeholder">
-          等待流连接...
-        </div>
+        <video ref="videoEl" class="video-player" autoplay playsinline muted></video>
+        <div v-if="!avatarStore.remoteStream" class="video-placeholder">等待流连接...</div>
       </div>
     </section>
   </div>

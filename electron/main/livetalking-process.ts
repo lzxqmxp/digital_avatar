@@ -34,7 +34,9 @@ export async function startLiveTalking(): Promise<void> {
   const ltArgs = ltArgsRaw.split(' ').filter(Boolean)
   const ltCwd = process.env['LIVETALKING_CWD'] || LIVETALKING_DIR
 
-  console.log(`[LiveTalking] starting: ${ltCommand} ${ltArgs.join(' ')} (cwd=${ltCwd}, port=${port})`)
+  console.log(
+    `[LiveTalking] starting: ${ltCommand} ${ltArgs.join(' ')} (cwd=${ltCwd}, port=${port})`
+  )
 
   return new Promise((resolve, reject) => {
     ltStartupResolve = resolve

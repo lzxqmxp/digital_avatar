@@ -82,7 +82,11 @@ interface LtResponse {
   data?: unknown
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 5000): Promise<Response> {
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs = 5000
+): Promise<Response> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -319,9 +323,12 @@ export async function liveTalkingCall<T>(
       let words: string[] = []
       try {
         const { callApi } = await import('@shared/api/client')
-        const res = await callApi<{ items: { word: string }[] }>(ApiPaths.SENSITIVE_WORDS_LIST, 'GET')
+        const res = await callApi<{ items: { word: string }[] }>(
+          ApiPaths.SENSITIVE_WORDS_LIST,
+          'GET'
+        )
         if (res.ok && res.data) {
-          words = res.data.items.map(i => i.word)
+          words = res.data.items.map((i) => i.word)
         }
       } catch {
         // fall through to fallback
@@ -330,7 +337,7 @@ export async function liveTalkingCall<T>(
         words = ['违禁', '敏感词', '违规']
       }
 
-      const hit = words.filter(w => text.includes(w))
+      const hit = words.filter((w) => text.includes(w))
       if (hit.length > 0) {
         return ok<ModerationCheckResponse>({
           risk_level: 'high',

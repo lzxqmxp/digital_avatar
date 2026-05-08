@@ -30,11 +30,11 @@ Electron Main (Node)
 
 ### 路由策略（dev-cpu 模式）
 
-| 路径类别 | 路由目标 | 说明 |
-|---------|---------|------|
-| session/live/queue/tts/avatar/stream | → LiveTalking HTTP API | `livetalking.ts` 适配器已实现 |
-| scripts/policies/writer/models/accounts/asr | → IPC → Main SQLite | 现有 `mock-api-db.ts` 通道 |
-| moderation/rewrite | → Node 侧本地实现 | 无 LiveTalking 对应，本地或云 API |
+| 路径类别                                    | 路由目标               | 说明                              |
+| ------------------------------------------- | ---------------------- | --------------------------------- |
+| session/live/queue/tts/avatar/stream        | → LiveTalking HTTP API | `livetalking.ts` 适配器已实现     |
+| scripts/policies/writer/models/accounts/asr | → IPC → Main SQLite    | 现有 `mock-api-db.ts` 通道        |
+| moderation/rewrite                          | → Node 侧本地实现      | 无 LiveTalking 对应，本地或云 API |
 
 ---
 
@@ -42,27 +42,28 @@ Electron Main (Node)
 
 ### 新建文件
 
-| 文件 | 职责 |
-|------|------|
+| 文件                                   | 职责                                                 |
+| -------------------------------------- | ---------------------------------------------------- |
 | `electron/main/livetalking-process.ts` | LiveTalking 子进程生命周期管理（启动/停止/健康检查） |
-| `src/shared/api/llm-client.ts` | LLM 云 API 客户端（改写/敏感词检测） |
+| `src/shared/api/llm-client.ts`         | LLM 云 API 客户端（改写/敏感词检测）                 |
 
 ### 修改文件
 
-| 文件 | 改动 |
-|------|------|
-| `electron/main/index.ts` | 添加 LiveTalking 进程启动/关闭 |
-| `src/shared/api/client.ts` | dev-cpu 模式：媒体路径→LiveTalking，数据路径→IPC SQLite |
-| `runtime/adapters/livetalking.ts` | 增强错误处理 + LLM/风控路径补充 |
-| `runtime/adapters/index.ts` | 已有正确导出，无需变动 |
-| `.env.dev-cpu` | 确保 LiveTalking URL 配置正确 |
-| `package.json` | 添加 LiveTalking 管理脚本 |
+| 文件                              | 改动                                                    |
+| --------------------------------- | ------------------------------------------------------- |
+| `electron/main/index.ts`          | 添加 LiveTalking 进程启动/关闭                          |
+| `src/shared/api/client.ts`        | dev-cpu 模式：媒体路径→LiveTalking，数据路径→IPC SQLite |
+| `runtime/adapters/livetalking.ts` | 增强错误处理 + LLM/风控路径补充                         |
+| `runtime/adapters/index.ts`       | 已有正确导出，无需变动                                  |
+| `.env.dev-cpu`                    | 确保 LiveTalking URL 配置正确                           |
+| `package.json`                    | 添加 LiveTalking 管理脚本                               |
 
 ---
 
 ### Task 1: 修复 dev-cpu 模式路由（数据路径走 IPC SQLite）
 
 **Files:**
+
 - Modify: `src/shared/api/client.ts`
 
 **问题：** 当前 `dev-cpu` 模式所有路径都走 `liveTalkingCall`，但 M3 数据路径（scripts/policies/models/accounts 等）LiveTalking 不处理，会返回 "Unknown LiveTalking path" 错误。
@@ -125,6 +126,7 @@ git commit -m "fix(api): route M3 paths through IPC SQLite in dev-cpu mode"
 ### Task 2: 增强 LiveTalking 适配器
 
 **Files:**
+
 - Modify: `runtime/adapters/livetalking.ts`
 
 - [ ] **Step 1: 增强 moderation 和 rewrite 路径**
@@ -190,7 +192,11 @@ function requiresLiveTalking(path: string): boolean {
 将 `liveTalkingCall` 中调用 `ltPost` 的地方统一用 `fetchWithTimeout` 包装：
 
 ```typescript
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 5000): Promise<Response> {
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs = 5000
+): Promise<Response> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -222,6 +228,7 @@ git commit -m "feat(adapter): enhance livetalking adapter with moderation and er
 ### Task 3: LiveTalking 进程生命周期管理
 
 **Files:**
+
 - Create: `electron/main/livetalking-process.ts`
 - Modify: `electron/main/index.ts`
 - Modify: `package.json`
@@ -268,7 +275,9 @@ export async function startLiveTalking(): Promise<void> {
   const ltArgs = ltArgsRaw.split(' ').filter(Boolean)
   const ltCwd = process.env['LIVETALKING_CWD'] || LIVETALKING_DIR
 
-  console.log(`[LiveTalking] starting: ${ltCommand} ${ltArgs.join(' ')} (cwd=${ltCwd}, port=${port})`)
+  console.log(
+    `[LiveTalking] starting: ${ltCommand} ${ltArgs.join(' ')} (cwd=${ltCwd}, port=${port})`
+  )
 
   return new Promise((resolve, reject) => {
     ltStartupResolve = resolve
@@ -295,7 +304,11 @@ export async function startLiveTalking(): Promise<void> {
       if (!text) return
       console.log(`[LiveTalking:err] ${text}`)
       // uvicorn/fastapi 等可能把启动日志输出到 stderr
-      if (text.includes('Uvicorn running') || text.includes('Application startup complete') || text.includes('Running on')) {
+      if (
+        text.includes('Uvicorn running') ||
+        text.includes('Application startup complete') ||
+        text.includes('Running on')
+      ) {
         if (ltStartupResolve) {
           ltStartupResolve()
           ltStartupResolve = null
@@ -455,6 +468,7 @@ git commit -m "feat(electron): add LiveTalking process lifecycle management"
 ### Task 4: LLM 改写和风控客户端（Node 侧）
 
 **Files:**
+
 - Create: `src/shared/api/llm-client.ts`
 
 - [ ] **Step 1: 创建 LLM 客户端**
@@ -481,14 +495,18 @@ type LlmProviderConfig = {
 
 function getLlmConfig(): LlmProviderConfig | null {
   const apiKey = import.meta.env.VITE_LLM_API_KEY as string | undefined
-  const baseUrl = (import.meta.env.VITE_LLM_BASE_URL as string | undefined) ?? 'https://api.openai.com/v1'
+  const baseUrl =
+    (import.meta.env.VITE_LLM_BASE_URL as string | undefined) ?? 'https://api.openai.com/v1'
   const model = (import.meta.env.VITE_LLM_MODEL as string | undefined) ?? 'gpt-4o-mini'
 
   if (!apiKey) return null
   return { apiKey, baseUrl, model }
 }
 
-export async function llmRewrite(text: string, style?: string): Promise<ApiResponse<{ rewritten_text: string; tokens_used: number }>> {
+export async function llmRewrite(
+  text: string,
+  style?: string
+): Promise<ApiResponse<{ rewritten_text: string; tokens_used: number }>> {
   const config = getLlmConfig()
   if (!config) {
     // No LLM configured → pass-through (mock behavior)
@@ -505,7 +523,7 @@ export async function llmRewrite(text: string, style?: string): Promise<ApiRespo
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiKey}`
+        Authorization: `Bearer ${config.apiKey}`
       },
       body: JSON.stringify({
         model: config.model,
@@ -530,7 +548,7 @@ export async function llmRewrite(text: string, style?: string): Promise<ApiRespo
       }
     }
 
-    const json = await res.json() as any
+    const json = (await res.json()) as any
     const rewritten = json.choices?.[0]?.message?.content?.trim() ?? text
 
     return {
@@ -550,7 +568,10 @@ export async function llmRewrite(text: string, style?: string): Promise<ApiRespo
   }
 }
 
-export async function llmGenerateReply(sampleText: string, policyConfig?: { temperature?: number; max_reply_len?: number }): Promise<ApiResponse<{ reply: string; tokens_used: number }>> {
+export async function llmGenerateReply(
+  sampleText: string,
+  policyConfig?: { temperature?: number; max_reply_len?: number }
+): Promise<ApiResponse<{ reply: string; tokens_used: number }>> {
   const config = getLlmConfig()
   if (!config) {
     return {
@@ -567,7 +588,7 @@ export async function llmGenerateReply(sampleText: string, policyConfig?: { temp
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiKey}`
+        Authorization: `Bearer ${config.apiKey}`
       },
       body: JSON.stringify({
         model: config.model,
@@ -592,7 +613,7 @@ export async function llmGenerateReply(sampleText: string, policyConfig?: { temp
       }
     }
 
-    const json = await res.json() as any
+    const json = (await res.json()) as any
     const reply = json.choices?.[0]?.message?.content?.trim() ?? ''
 
     return {
@@ -623,7 +644,7 @@ export type SensitiveWordResult = {
 const BUILTIN_SENSITIVE_WORDS = ['违禁', '敏感词', '违规']
 
 export function localSensitiveCheck(text: string): SensitiveWordResult {
-  const hit = BUILTIN_SENSITIVE_WORDS.filter(w => text.includes(w))
+  const hit = BUILTIN_SENSITIVE_WORDS.filter((w) => text.includes(w))
   return {
     hit_words: hit,
     safe: hit.length === 0
@@ -651,6 +672,7 @@ git commit -m "feat(llm): add LLM client for rewrite and reply generation"
 ### Task 5: 环境配置和验证
 
 **Files:**
+
 - Modify: `.env.dev-cpu`
 - Test: 无新增文件，执行手动验证
 
@@ -720,14 +742,14 @@ git commit -m "chore(env): update dev-cpu configuration for LiveTalking and LLM"
 
 ### 1. 需求覆盖度
 
-| 需求 | 对应任务 | 说明 |
-|------|---------|------|
-| LiveTalking 媒体推理 | Task 3 | 进程管理 + 现有 `livetalking.ts` 适配器 |
-| M3 数据持久化 | Task 1 | SQLite IPC 通道打通，`dev-cpu` 模式可访问 |
-| LLM 改写/回复 | Task 4 | `llm-client.ts` 支持云 API，无配置时 fallback |
-| 敏感词检测 | Task 2, 4 | LiveTalking 适配器 + 本地内置词库双重保障 |
-| 进程生命周期 | Task 3 | 启动/健康检查/优雅停止/强制杀 |
-| 端到端验证 | Task 5 | 5 条正向 + 3 条错误用例 |
+| 需求                 | 对应任务  | 说明                                          |
+| -------------------- | --------- | --------------------------------------------- |
+| LiveTalking 媒体推理 | Task 3    | 进程管理 + 现有 `livetalking.ts` 适配器       |
+| M3 数据持久化        | Task 1    | SQLite IPC 通道打通，`dev-cpu` 模式可访问     |
+| LLM 改写/回复        | Task 4    | `llm-client.ts` 支持云 API，无配置时 fallback |
+| 敏感词检测           | Task 2, 4 | LiveTalking 适配器 + 本地内置词库双重保障     |
+| 进程生命周期         | Task 3    | 启动/健康检查/优雅停止/强制杀                 |
+| 端到端验证           | Task 5    | 5 条正向 + 3 条错误用例                       |
 
 ### 2. 占位符检查
 

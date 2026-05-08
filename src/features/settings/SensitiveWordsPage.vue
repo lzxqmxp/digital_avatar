@@ -136,7 +136,9 @@ async function onSave(id: string) {
 // --- btn_sw_delete ---
 async function onDelete(id: string) {
   setBtn(`btn_sw_delete_${id}`, 'loading')
-  const res = await callApi<SensitiveWordDeleteResponse>(ApiPaths.SENSITIVE_WORDS_DELETE, 'POST', { id })
+  const res = await callApi<SensitiveWordDeleteResponse>(ApiPaths.SENSITIVE_WORDS_DELETE, 'POST', {
+    id
+  })
   if (res.ok) {
     words.value = words.value.filter((w) => w.id !== id)
     setBtn(`btn_sw_delete_${id}`, 'success', '已删除')
@@ -235,7 +237,8 @@ function severityColor(severity: string) {
         <span
           v-if="btnMessages['btn_sw_new']"
           :class="btnStates['btn_sw_new'] === 'error' ? 'msg--error' : 'msg--success'"
-        >{{ btnMessages['btn_sw_new'] }}</span>
+          >{{ btnMessages['btn_sw_new'] }}</span
+        >
       </div>
     </section>
 
@@ -258,7 +261,11 @@ function severityColor(severity: string) {
           检测
         </button>
       </div>
-      <div v-if="testResult !== null" class="test-result" :class="testHits.length > 0 ? 'test-result--hit' : 'test-result--safe'">
+      <div
+        v-if="testResult !== null"
+        class="test-result"
+        :class="testHits.length > 0 ? 'test-result--hit' : 'test-result--safe'"
+      >
         {{ testResult }}
         <span v-for="w in testHits" :key="w" class="sensitive-word">{{ w }}</span>
       </div>
@@ -266,7 +273,8 @@ function severityColor(severity: string) {
         <span
           v-if="btnMessages['btn_sw_test']"
           :class="btnStates['btn_sw_test'] === 'error' ? 'msg--error' : 'msg--success'"
-        >{{ btnMessages['btn_sw_test'] }}</span>
+          >{{ btnMessages['btn_sw_test'] }}</span
+        >
       </div>
     </section>
 
@@ -277,7 +285,10 @@ function severityColor(severity: string) {
       <div v-for="item in words" :key="item.id" class="word-item">
         <div v-if="editingId !== item.id" class="word-view">
           <span class="word-text">{{ item.word }}</span>
-          <span class="severity-badge" :style="{ backgroundColor: severityColor(item.severity), color: '#0f172a' }">
+          <span
+            class="severity-badge"
+            :style="{ backgroundColor: severityColor(item.severity), color: '#0f172a' }"
+          >
             {{ severityLabel(item.severity) }}
           </span>
           <span class="word-group">{{ item.group }}</span>
@@ -285,7 +296,9 @@ function severityColor(severity: string) {
         <div v-else class="word-edit">
           <input v-model="editWord" class="input" maxlength="50" />
           <select v-model="editSeverity" class="input input--sm">
-            <option v-for="opt in severityOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            <option v-for="opt in severityOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
           </select>
           <input v-model="editGroup" class="input input--sm" maxlength="20" />
           <button
@@ -293,7 +306,9 @@ function severityColor(severity: string) {
             :class="btnClass(`btn_sw_save_${item.id}`)"
             :disabled="!editWord.trim() || btnStates[`btn_sw_save_${item.id}`] === 'loading'"
             @click="onSave(item.id)"
-          >保存</button>
+          >
+            保存
+          </button>
           <button class="btn" @click="editingId = null">取消</button>
         </div>
         <div class="word-actions" v-if="editingId !== item.id">
@@ -303,16 +318,19 @@ function severityColor(severity: string) {
             :class="[...btnClass(`btn_sw_delete_${item.id}`), 'btn--danger']"
             :disabled="btnStates[`btn_sw_delete_${item.id}`] === 'loading'"
             @click="onDelete(item.id)"
-          >删除</button>
+          >
+            删除
+          </button>
         </div>
         <div class="msg-row">
-          <span
-            v-for="suffix in ['save', 'delete']" :key="suffix"
-          >
+          <span v-for="suffix in ['save', 'delete']" :key="suffix">
             <span
               v-if="btnMessages[`btn_sw_${suffix}_${item.id}`]"
-              :class="btnStates[`btn_sw_${suffix}_${item.id}`] === 'error' ? 'msg--error' : 'msg--success'"
-            >{{ btnMessages[`btn_sw_${suffix}_${item.id}`] }}</span>
+              :class="
+                btnStates[`btn_sw_${suffix}_${item.id}`] === 'error' ? 'msg--error' : 'msg--success'
+              "
+              >{{ btnMessages[`btn_sw_${suffix}_${item.id}`] }}</span
+            >
           </span>
         </div>
       </div>
@@ -321,37 +339,190 @@ function severityColor(severity: string) {
 </template>
 
 <style scoped>
-.page { max-width: 900px; }
-.page-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: #e2e8f0; }
-.section { background: #1e293b; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-.section-title { font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
-.form-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.msg-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 20px; margin-top: 6px; }
-.input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; min-width: 100px; }
-.input--wide { flex: 1; min-width: 200px; }
-.input--sm { width: 100px; min-width: 80px; }
-.input:focus { outline: none; border-color: #38bdf8; }
-.btn { padding: 6px 14px; border-radius: 6px; border: none; font-size: 13px; cursor: pointer; transition: all 0.15s; background: #334155; color: #e2e8f0; }
-.btn--sm { padding: 4px 10px; font-size: 12px; }
-.btn:hover:not(:disabled) { background: #475569; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn--loading { background: #1d4ed8; color: #bfdbfe; }
-.btn--success { background: #166534; color: #bbf7d0; }
-.btn--error { background: #7f1d1d; color: #fecaca; }
-.btn--danger { background: #450a0a; color: #fca5a5; }
-.btn--danger:hover:not(:disabled) { background: #7f1d1d; }
-.msg--success { color: #4ade80; font-size: 12px; }
-.msg--error { color: #f87171; font-size: 12px; }
-.empty { color: #64748b; font-size: 13px; text-align: center; padding: 24px 0; }
-.word-item { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; background: #0f172a; border-radius: 6px; margin-bottom: 8px; border: 1px solid #334155; }
-.word-view { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.word-text { font-size: 14px; font-weight: 600; color: #e2e8f0; }
-.severity-badge { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; }
-.word-group { font-size: 11px; color: #94a3b8; background: #1e293b; padding: 1px 6px; border-radius: 4px; }
-.word-edit { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.word-actions { display: flex; gap: 6px; }
-.test-result { padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.test-result--safe { background: #052e16; color: #4ade80; border: 1px solid #166534; }
-.test-result--hit { background: #450a0a; color: #fca5a5; border: 1px solid #b91c1c; }
-.sensitive-word { background: #b91c1c; color: #fecaca; padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+.page {
+  max-width: 900px;
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #e2e8f0;
+}
+.section {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.msg-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 20px;
+  margin-top: 6px;
+}
+.input {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  min-width: 100px;
+}
+.input--wide {
+  flex: 1;
+  min-width: 200px;
+}
+.input--sm {
+  width: 100px;
+  min-width: 80px;
+}
+.input:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+.btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #334155;
+  color: #e2e8f0;
+}
+.btn--sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.btn:hover:not(:disabled) {
+  background: #475569;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn--loading {
+  background: #1d4ed8;
+  color: #bfdbfe;
+}
+.btn--success {
+  background: #166534;
+  color: #bbf7d0;
+}
+.btn--error {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+.btn--danger {
+  background: #450a0a;
+  color: #fca5a5;
+}
+.btn--danger:hover:not(:disabled) {
+  background: #7f1d1d;
+}
+.msg--success {
+  color: #4ade80;
+  font-size: 12px;
+}
+.msg--error {
+  color: #f87171;
+  font-size: 12px;
+}
+.empty {
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+  padding: 24px 0;
+}
+.word-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #0f172a;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border: 1px solid #334155;
+}
+.word-view {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.word-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+.severity-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 99px;
+}
+.word-group {
+  font-size: 11px;
+  color: #94a3b8;
+  background: #1e293b;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.word-edit {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.word-actions {
+  display: flex;
+  gap: 6px;
+}
+.test-result {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.test-result--safe {
+  background: #052e16;
+  color: #4ade80;
+  border: 1px solid #166534;
+}
+.test-result--hit {
+  background: #450a0a;
+  color: #fca5a5;
+  border: 1px solid #b91c1c;
+}
+.sensitive-word {
+  background: #b91c1c;
+  color: #fecaca;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
 </style>

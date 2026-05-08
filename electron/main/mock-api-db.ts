@@ -592,7 +592,9 @@ function fetchAccountById(db: DatabaseSync, id: string): AccountRow | undefined 
 
 function fetchSensitiveWordById(db: DatabaseSync, id: string): SensitiveWordRow | undefined {
   return db
-    .prepare('SELECT id, word, severity, group_name, created_at, updated_at FROM sensitive_words WHERE id = ?')
+    .prepare(
+      'SELECT id, word, severity, group_name, created_at, updated_at FROM sensitive_words WHERE id = ?'
+    )
     .get(id) as SensitiveWordRow | undefined
 }
 
@@ -1325,7 +1327,10 @@ export async function handleMockApiCall<T>(
       const req = body as SensitiveWordCreateRequest
       const word = req?.word?.trim() ?? ''
       if (!word || word.length > 50) {
-        return err<SensitiveWordItem>(ErrorCode.SW_WORD_INVALID, '敏感词无效（1-50字）') as ApiResponse<T>
+        return err<SensitiveWordItem>(
+          ErrorCode.SW_WORD_INVALID,
+          '敏感词无效（1-50字）'
+        ) as ApiResponse<T>
       }
       const exists = db.prepare('SELECT id FROM sensitive_words WHERE word = ?').get(word) as
         | { id: string }
@@ -1333,7 +1338,8 @@ export async function handleMockApiCall<T>(
       if (exists) {
         return err<SensitiveWordItem>(ErrorCode.SW_WORD_EXISTS, '敏感词已存在') as ApiResponse<T>
       }
-      const severity = req.severity && SW_SEVERITY_VALUES.has(req.severity) ? req.severity : 'medium'
+      const severity =
+        req.severity && SW_SEVERITY_VALUES.has(req.severity) ? req.severity : 'medium'
       const group = req.group?.trim() || 'default'
       const swId = randomUUID()
       const createdAt = Date.now()
@@ -1345,8 +1351,12 @@ export async function handleMockApiCall<T>(
         return err<SensitiveWordItem>(ErrorCode.NO_ACTIVE_TASK, '创建失败') as ApiResponse<T>
       }
       return ok<SensitiveWordItem>({
-        id: row.id, word: row.word, severity: row.severity,
-        group: row.group_name, created_at: row.created_at, updated_at: row.updated_at
+        id: row.id,
+        word: row.word,
+        severity: row.severity,
+        group: row.group_name,
+        created_at: row.created_at,
+        updated_at: row.updated_at
       }) as ApiResponse<T>
     }
 
@@ -1357,14 +1367,20 @@ export async function handleMockApiCall<T>(
         return err<SensitiveWordItem>(ErrorCode.SW_WORD_NOT_FOUND, '敏感词不存在') as ApiResponse<T>
       }
       const word = req.word !== undefined ? req.word.trim() : current.word
-      const severity = req.severity !== undefined && SW_SEVERITY_VALUES.has(req.severity) ? req.severity : current.severity
+      const severity =
+        req.severity !== undefined && SW_SEVERITY_VALUES.has(req.severity)
+          ? req.severity
+          : current.severity
       const group = req.group !== undefined ? req.group.trim() || 'default' : current.group_name
       if (!word || word.length > 50) {
-        return err<SensitiveWordItem>(ErrorCode.SW_WORD_INVALID, '敏感词无效（1-50字）') as ApiResponse<T>
+        return err<SensitiveWordItem>(
+          ErrorCode.SW_WORD_INVALID,
+          '敏感词无效（1-50字）'
+        ) as ApiResponse<T>
       }
-      const dup = db.prepare('SELECT id FROM sensitive_words WHERE word = ? AND id <> ?').get(word, req.id) as
-        | { id: string }
-        | undefined
+      const dup = db
+        .prepare('SELECT id FROM sensitive_words WHERE word = ? AND id <> ?')
+        .get(word, req.id) as { id: string } | undefined
       if (dup) {
         return err<SensitiveWordItem>(ErrorCode.SW_WORD_EXISTS, '敏感词已存在') as ApiResponse<T>
       }
@@ -1376,21 +1392,36 @@ export async function handleMockApiCall<T>(
         return err<SensitiveWordItem>(ErrorCode.NO_ACTIVE_TASK, '更新失败') as ApiResponse<T>
       }
       return ok<SensitiveWordItem>({
-        id: row.id, word: row.word, severity: row.severity,
-        group: row.group_name, created_at: row.created_at, updated_at: row.updated_at
+        id: row.id,
+        word: row.word,
+        severity: row.severity,
+        group: row.group_name,
+        created_at: row.created_at,
+        updated_at: row.updated_at
       }) as ApiResponse<T>
     }
 
     case ApiPaths.SENSITIVE_WORDS_DELETE: {
       const req = body as SensitiveWordDeleteRequest
       if (!req?.id) {
-        return err<{ id: string; deleted_at: number }>(ErrorCode.SW_WORD_NOT_FOUND, '敏感词不存在') as ApiResponse<T>
+        return err<{ id: string; deleted_at: number }>(
+          ErrorCode.SW_WORD_NOT_FOUND,
+          '敏感词不存在'
+        ) as ApiResponse<T>
       }
-      const result = db.prepare('DELETE FROM sensitive_words WHERE id = ?').run(req.id) as { changes: number }
+      const result = db.prepare('DELETE FROM sensitive_words WHERE id = ?').run(req.id) as {
+        changes: number
+      }
       if (result.changes === 0) {
-        return err<{ id: string; deleted_at: number }>(ErrorCode.SW_WORD_NOT_FOUND, '敏感词不存在') as ApiResponse<T>
+        return err<{ id: string; deleted_at: number }>(
+          ErrorCode.SW_WORD_NOT_FOUND,
+          '敏感词不存在'
+        ) as ApiResponse<T>
       }
-      return ok<{ id: string; deleted_at: number }>({ id: req.id, deleted_at: Date.now() }) as ApiResponse<T>
+      return ok<{ id: string; deleted_at: number }>({
+        id: req.id,
+        deleted_at: Date.now()
+      }) as ApiResponse<T>
     }
 
     default:

@@ -13,27 +13,30 @@
 ## Files to Create or Modify
 
 ### New files:
+
 - `src/features/settings/SensitiveWordsPage.vue` — sensitive word management page (CRUD table + add/edit form)
 - `tests/sensitive-words.test.ts` — integration tests
 
 ### Modified files:
-| File | Change |
-|------|--------|
-| `src/shared/types/api.ts` | Add 4 API paths + request/response types + error codes |
-| `src/shared/types/actions.ts` | Add button IDs for the new page |
-| `electron/main/mock-api-db.ts` | Add `sensitive_words` table schema, seed data, CRUD handlers |
-| `runtime/mock/handlers.ts` | Add paths to `sqliteBackedPaths`; update WRITER_SENSITIVE_CHECK and MODERATION_CHECK to query DB |
-| `runtime/adapters/livetalking.ts` | Update MODERATION_CHECK to call SENSITIVE_WORDS_LIST API instead of hardcoded FLAGGED_WORDS |
-| `src/shared/api/llm-client.ts` | Update `localSensitiveCheck` to accept dynamic word list or call API |
-| `src/renderer/src/router/index.ts` | Add `/sensitive-words` route |
-| `src/renderer/src/components/AppLayout.vue` | Add nav link in "运营管理" group |
-| `docs/plan.md` | Update §7 mapping, add note about sensitive word management completion |
+
+| File                                        | Change                                                                                           |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `src/shared/types/api.ts`                   | Add 4 API paths + request/response types + error codes                                           |
+| `src/shared/types/actions.ts`               | Add button IDs for the new page                                                                  |
+| `electron/main/mock-api-db.ts`              | Add `sensitive_words` table schema, seed data, CRUD handlers                                     |
+| `runtime/mock/handlers.ts`                  | Add paths to `sqliteBackedPaths`; update WRITER_SENSITIVE_CHECK and MODERATION_CHECK to query DB |
+| `runtime/adapters/livetalking.ts`           | Update MODERATION_CHECK to call SENSITIVE_WORDS_LIST API instead of hardcoded FLAGGED_WORDS      |
+| `src/shared/api/llm-client.ts`              | Update `localSensitiveCheck` to accept dynamic word list or call API                             |
+| `src/renderer/src/router/index.ts`          | Add `/sensitive-words` route                                                                     |
+| `src/renderer/src/components/AppLayout.vue` | Add nav link in "运营管理" group                                                                 |
+| `docs/plan.md`                              | Update §7 mapping, add note about sensitive word management completion                           |
 
 ---
 
 ### Task 1: Add API types, paths, and error codes
 
 **Files:**
+
 - Modify: `src/shared/types/api.ts` — add new paths after ASR_EXPORT
 
 - [ ] **Step 1: Add API path constants**
@@ -53,11 +56,11 @@ After the `ASR_EXPORT` line (line 60), add:
 After `ASR_EXPORT_EMPTY` (line 104), add:
 
 ```typescript
-  // Sensitive words
-  SW_WORD_EXISTS = 'SW_WORD_EXISTS',
-  SW_WORD_INVALID = 'SW_WORD_INVALID',
-  SW_WORD_NOT_FOUND = 'SW_WORD_NOT_FOUND',
-  SW_BATCH_TOO_LARGE = 'SW_BATCH_TOO_LARGE'
+// Sensitive words
+;((SW_WORD_EXISTS = 'SW_WORD_EXISTS'),
+  (SW_WORD_INVALID = 'SW_WORD_INVALID'),
+  (SW_WORD_NOT_FOUND = 'SW_WORD_NOT_FOUND'),
+  (SW_BATCH_TOO_LARGE = 'SW_BATCH_TOO_LARGE'))
 ```
 
 After the corresponding message entries (after line 142), add:
@@ -123,6 +126,7 @@ git commit -m "feat: add sensitive words management API types and paths"
 ### Task 2: Add database table, seed data, and CRUD handlers
 
 **Files:**
+
 - Modify: `electron/main/mock-api-db.ts`
 
 - [ ] **Step 1: Add `SensitiveWordRow` type and status validators**
@@ -162,35 +166,35 @@ Insert before the closing `)` of `db.exec(...)` (after line 408):
 After the accounts seed block (after line 487), add:
 
 ```typescript
-  const swCountRow = db.prepare('SELECT COUNT(*) AS c FROM sensitive_words').get() as
-    | { c: number }
-    | undefined
-  if ((swCountRow?.c ?? 0) === 0) {
-    const now = now()
-    const defaultWords: { word: string; severity: 'high' | 'medium' | 'low'; group: string }[] = [
-      { word: '违禁', severity: 'high', group: 'default' },
-      { word: '敏感词', severity: 'high', group: 'default' },
-      { word: '违规', severity: 'high', group: 'default' },
-      { word: '赌博', severity: 'high', group: 'illegal' },
-      { word: '色情', severity: 'high', group: 'illegal' },
-      { word: '毒品', severity: 'high', group: 'illegal' },
-      { word: '诈骗', severity: 'high', group: 'illegal' },
-      { word: '政治', severity: 'high', group: 'politics' },
-      { word: '宗教信仰', severity: 'medium', group: 'politics' },
-      { word: '诋毁', severity: 'medium', group: 'insult' },
-      { word: '歧视', severity: 'medium', group: 'insult' },
-      { word: '诅咒', severity: 'medium', group: 'insult' },
-      { word: '暴力', severity: 'high', group: 'violence' },
-      { word: '血腥', severity: 'high', group: 'violence' },
-      { word: '恐怖主义', severity: 'high', group: 'violence' }
-    ]
-    for (const sw of defaultWords) {
-      const t = Date.now()
-      db.prepare(
-        'INSERT INTO sensitive_words (id, word, severity, group_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run(randomUUID(), sw.word, sw.severity, sw.group, t, t)
-    }
+const swCountRow = db.prepare('SELECT COUNT(*) AS c FROM sensitive_words').get() as
+  | { c: number }
+  | undefined
+if ((swCountRow?.c ?? 0) === 0) {
+  const now = now()
+  const defaultWords: { word: string; severity: 'high' | 'medium' | 'low'; group: string }[] = [
+    { word: '违禁', severity: 'high', group: 'default' },
+    { word: '敏感词', severity: 'high', group: 'default' },
+    { word: '违规', severity: 'high', group: 'default' },
+    { word: '赌博', severity: 'high', group: 'illegal' },
+    { word: '色情', severity: 'high', group: 'illegal' },
+    { word: '毒品', severity: 'high', group: 'illegal' },
+    { word: '诈骗', severity: 'high', group: 'illegal' },
+    { word: '政治', severity: 'high', group: 'politics' },
+    { word: '宗教信仰', severity: 'medium', group: 'politics' },
+    { word: '诋毁', severity: 'medium', group: 'insult' },
+    { word: '歧视', severity: 'medium', group: 'insult' },
+    { word: '诅咒', severity: 'medium', group: 'insult' },
+    { word: '暴力', severity: 'high', group: 'violence' },
+    { word: '血腥', severity: 'high', group: 'violence' },
+    { word: '恐怖主义', severity: 'high', group: 'violence' }
+  ]
+  for (const sw of defaultWords) {
+    const t = Date.now()
+    db.prepare(
+      'INSERT INTO sensitive_words (id, word, severity, group_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(randomUUID(), sw.word, sw.severity, sw.group, t, t)
   }
+}
 ```
 
 > **Note:** The `now()` function is already defined in the file. In seed data there is a naming conflict since `now()` is used as both the function name and a local variable in the outer scope. You must rename the outer function call — the file already has `function now(): number { return Date.now() }` at line 231. Use `Date.now()` directly inside the seed block where the variable name would shadow. The existing patterns in the file already do this correctly (see accounts seed block which uses correct call syntax).
@@ -202,7 +206,9 @@ After `fetchAccountById` (after line 537), add:
 ```typescript
 function fetchSensitiveWordById(db: DatabaseSync, id: string): SensitiveWordRow | undefined {
   return db
-    .prepare('SELECT id, word, severity, group_name, created_at, updated_at FROM sensitive_words WHERE id = ?')
+    .prepare(
+      'SELECT id, word, severity, group_name, created_at, updated_at FROM sensitive_words WHERE id = ?'
+    )
     .get(id) as SensitiveWordRow | undefined
 }
 ```
@@ -318,6 +324,7 @@ git commit -m "feat: add sensitive_words table and CRUD handlers to SQLite DB"
 ### Task 3: Update mock handlers and wiring
 
 **Files:**
+
 - Modify: `runtime/mock/handlers.ts`
 
 - [ ] **Step 1: Add new API paths to `sqliteBackedPaths`**
@@ -325,10 +332,10 @@ git commit -m "feat: add sensitive_words table and CRUD handlers to SQLite DB"
 Add the 4 new paths to the set (after line 115):
 
 ```typescript
-  ApiPaths.SENSITIVE_WORDS_LIST,
+;(ApiPaths.SENSITIVE_WORDS_LIST,
   ApiPaths.SENSITIVE_WORDS_CREATE,
   ApiPaths.SENSITIVE_WORDS_UPDATE,
-  ApiPaths.SENSITIVE_WORDS_DELETE
+  ApiPaths.SENSITIVE_WORDS_DELETE)
 ```
 
 - [ ] **Step 2: Update `WRITER_SENSITIVE_CHECK` to use DB**
@@ -338,6 +345,7 @@ Replace the existing case (lines 596-604) — in mock mode, the handler falls th
 Actually, `WRITER_SENSITIVE_CHECK` is already in `sqliteBackedPaths` (line 101), so it already goes through SQLite in dev-cpu mode. But in dev-mock mode, it hits the mock switch statement (line 596). We need to update the mock handler to query the DB too. But wait — in dev-mock mode, there's no IPC → SQLite available. The mock handler is just in-memory.
 
 So for dev-mock mode, we have two options:
+
 1. Keep the simple hardcoded check in the mock handler (it's a mock after all)
 2. Use the in-memory mock state
 
@@ -417,6 +425,7 @@ git commit -m "feat: update mock sensitive checks to use expanded word list"
 ### Task 4: Update LiveTalking adapter moderation check
 
 **Files:**
+
 - Modify: `runtime/adapters/livetalking.ts`
 
 - [ ] **Step 1: Update MODERATION_CHECK to call the API**
@@ -431,7 +440,7 @@ Replace lines 314-330:
     case ApiPaths.MODERATION_CHECK: {
       const req = body as ModerationCheckRequest
       const text = req?.text ?? ''
-      
+
       // Try to fetch from API, fall back to local list
       let words: string[] = []
       try {
@@ -446,7 +455,7 @@ Replace lines 314-330:
       if (words.length === 0) {
         words = ['违禁', '敏感词', '违规']
       }
-      
+
       const hit = words.filter(w => text.includes(w))
       if (hit.length > 0) {
         return ok<ModerationCheckResponse>({
@@ -476,6 +485,7 @@ git commit -m "feat: update LiveTalking moderation check to use managed sensitiv
 ### Task 5: Update llm-client local check
 
 **Files:**
+
 - Modify: `src/shared/api/llm-client.ts`
 
 - [ ] **Step 1: Update `localSensitiveCheck` to accept dynamic word list**
@@ -485,10 +495,7 @@ Replace line 164-172 to accept an optional word list parameter, with the built-i
 ```typescript
 const BUILTIN_SENSITIVE_WORDS = ['违禁', '敏感词', '违规', '赌博', '色情', '诈骗', '暴力', '血腥']
 
-export function localSensitiveCheck(
-  text: string,
-  customWords?: string[]
-): SensitiveWordResult {
+export function localSensitiveCheck(text: string, customWords?: string[]): SensitiveWordResult {
   const words = customWords && customWords.length > 0 ? customWords : BUILTIN_SENSITIVE_WORDS
   const hit = words.filter((w) => text.includes(w))
   return {
@@ -510,6 +517,7 @@ git commit -m "feat: update localSensitiveCheck to accept custom word list"
 ### Task 6: Add frontend action IDs for the new page
 
 **Files:**
+
 - Modify: `src/shared/types/actions.ts`
 
 - [ ] **Step 1: Add new ActionId literals**
@@ -537,11 +545,13 @@ git commit -m "feat: add action IDs for sensitive words page"
 ### Task 7: Create the SensitiveWordsPage Vue component
 
 **Files:**
+
 - Create: `src/features/settings/SensitiveWordsPage.vue`
 
 - [ ] **Step 1: Write the complete Vue page**
 
 Create the file with three sections:
+
 1. **Add word form** — input + severity select + group input → "btn_sw_new"
 2. **Test tool** — input text + test button → "btn_sw_test" (calls `WRITER_SENSITIVE_CHECK`)
 3. **Word list** — table with word, severity, group, actions (edit/save/delete)
@@ -685,7 +695,9 @@ async function onSave(id: string) {
 // --- btn_sw_delete ---
 async function onDelete(id: string) {
   setBtn(`btn_sw_delete_${id}`, 'loading')
-  const res = await callApi<SensitiveWordDeleteResponse>(ApiPaths.SENSITIVE_WORDS_DELETE, 'POST', { id })
+  const res = await callApi<SensitiveWordDeleteResponse>(ApiPaths.SENSITIVE_WORDS_DELETE, 'POST', {
+    id
+  })
   if (res.ok) {
     words.value = words.value.filter((w) => w.id !== id)
     setBtn(`btn_sw_delete_${id}`, 'success', '已删除')
@@ -784,7 +796,8 @@ function severityColor(severity: string) {
         <span
           v-if="btnMessages['btn_sw_new']"
           :class="btnStates['btn_sw_new'] === 'error' ? 'msg--error' : 'msg--success'"
-        >{{ btnMessages['btn_sw_new'] }}</span>
+          >{{ btnMessages['btn_sw_new'] }}</span
+        >
       </div>
     </section>
 
@@ -807,7 +820,11 @@ function severityColor(severity: string) {
           检测
         </button>
       </div>
-      <div v-if="testResult !== null" class="test-result" :class="testHits.length > 0 ? 'test-result--hit' : 'test-result--safe'">
+      <div
+        v-if="testResult !== null"
+        class="test-result"
+        :class="testHits.length > 0 ? 'test-result--hit' : 'test-result--safe'"
+      >
         {{ testResult }}
         <span v-for="w in testHits" :key="w" class="sensitive-word">{{ w }}</span>
       </div>
@@ -815,7 +832,8 @@ function severityColor(severity: string) {
         <span
           v-if="btnMessages['btn_sw_test']"
           :class="btnStates['btn_sw_test'] === 'error' ? 'msg--error' : 'msg--success'"
-        >{{ btnMessages['btn_sw_test'] }}</span>
+          >{{ btnMessages['btn_sw_test'] }}</span
+        >
       </div>
     </section>
 
@@ -826,7 +844,10 @@ function severityColor(severity: string) {
       <div v-for="item in words" :key="item.id" class="word-item">
         <div v-if="editingId !== item.id" class="word-view">
           <span class="word-text">{{ item.word }}</span>
-          <span class="severity-badge" :style="{ backgroundColor: severityColor(item.severity), color: '#0f172a' }">
+          <span
+            class="severity-badge"
+            :style="{ backgroundColor: severityColor(item.severity), color: '#0f172a' }"
+          >
             {{ severityLabel(item.severity) }}
           </span>
           <span class="word-group">{{ item.group }}</span>
@@ -834,7 +855,9 @@ function severityColor(severity: string) {
         <div v-else class="word-edit">
           <input v-model="editWord" class="input" maxlength="50" />
           <select v-model="editSeverity" class="input input--sm">
-            <option v-for="opt in severityOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            <option v-for="opt in severityOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
           </select>
           <input v-model="editGroup" class="input input--sm" maxlength="20" />
           <button
@@ -842,7 +865,9 @@ function severityColor(severity: string) {
             :class="btnClass(`btn_sw_save_${item.id}`)"
             :disabled="!editWord.trim() || btnStates[`btn_sw_save_${item.id}`] === 'loading'"
             @click="onSave(item.id)"
-          >保存</button>
+          >
+            保存
+          </button>
           <button class="btn" @click="editingId = null">取消</button>
         </div>
         <div class="word-actions" v-if="editingId !== item.id">
@@ -852,16 +877,19 @@ function severityColor(severity: string) {
             :class="[...btnClass(`btn_sw_delete_${item.id}`), 'btn--danger']"
             :disabled="btnStates[`btn_sw_delete_${item.id}`] === 'loading'"
             @click="onDelete(item.id)"
-          >删除</button>
+          >
+            删除
+          </button>
         </div>
         <div class="msg-row">
-          <span
-            v-for="suffix in ['save', 'delete']" :key="suffix"
-          >
+          <span v-for="suffix in ['save', 'delete']" :key="suffix">
             <span
               v-if="btnMessages[`btn_sw_${suffix}_${item.id}`]"
-              :class="btnStates[`btn_sw_${suffix}_${item.id}`] === 'error' ? 'msg--error' : 'msg--success'"
-            >{{ btnMessages[`btn_sw_${suffix}_${item.id}`] }}</span>
+              :class="
+                btnStates[`btn_sw_${suffix}_${item.id}`] === 'error' ? 'msg--error' : 'msg--success'
+              "
+              >{{ btnMessages[`btn_sw_${suffix}_${item.id}`] }}</span
+            >
           </span>
         </div>
       </div>
@@ -870,39 +898,192 @@ function severityColor(severity: string) {
 </template>
 
 <style scoped>
-.page { max-width: 900px; }
-.page-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: #e2e8f0; }
-.section { background: #1e293b; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-.section-title { font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
-.form-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.msg-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 20px; margin-top: 6px; }
-.input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px; min-width: 100px; }
-.input--wide { flex: 1; min-width: 200px; }
-.input--sm { width: 100px; min-width: 80px; }
-.input:focus { outline: none; border-color: #38bdf8; }
-.btn { padding: 6px 14px; border-radius: 6px; border: none; font-size: 13px; cursor: pointer; transition: all 0.15s; background: #334155; color: #e2e8f0; }
-.btn--sm { padding: 4px 10px; font-size: 12px; }
-.btn:hover:not(:disabled) { background: #475569; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn--loading { background: #1d4ed8; color: #bfdbfe; }
-.btn--success { background: #166534; color: #bbf7d0; }
-.btn--error { background: #7f1d1d; color: #fecaca; }
-.btn--danger { background: #450a0a; color: #fca5a5; }
-.btn--danger:hover:not(:disabled) { background: #7f1d1d; }
-.msg--success { color: #4ade80; font-size: 12px; }
-.msg--error { color: #f87171; font-size: 12px; }
-.empty { color: #64748b; font-size: 13px; text-align: center; padding: 24px 0; }
-.word-item { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; background: #0f172a; border-radius: 6px; margin-bottom: 8px; border: 1px solid #334155; }
-.word-view { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.word-text { font-size: 14px; font-weight: 600; color: #e2e8f0; }
-.severity-badge { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; }
-.word-group { font-size: 11px; color: #94a3b8; background: #1e293b; padding: 1px 6px; border-radius: 4px; }
-.word-edit { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.word-actions { display: flex; gap: 6px; }
-.test-result { padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.test-result--safe { background: #052e16; color: #4ade80; border: 1px solid #166534; }
-.test-result--hit { background: #450a0a; color: #fca5a5; border: 1px solid #b91c1c; }
-.sensitive-word { background: #b91c1c; color: #fecaca; padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+.page {
+  max-width: 900px;
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #e2e8f0;
+}
+.section {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.msg-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 20px;
+  margin-top: 6px;
+}
+.input {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  min-width: 100px;
+}
+.input--wide {
+  flex: 1;
+  min-width: 200px;
+}
+.input--sm {
+  width: 100px;
+  min-width: 80px;
+}
+.input:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+.btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #334155;
+  color: #e2e8f0;
+}
+.btn--sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.btn:hover:not(:disabled) {
+  background: #475569;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn--loading {
+  background: #1d4ed8;
+  color: #bfdbfe;
+}
+.btn--success {
+  background: #166534;
+  color: #bbf7d0;
+}
+.btn--error {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+.btn--danger {
+  background: #450a0a;
+  color: #fca5a5;
+}
+.btn--danger:hover:not(:disabled) {
+  background: #7f1d1d;
+}
+.msg--success {
+  color: #4ade80;
+  font-size: 12px;
+}
+.msg--error {
+  color: #f87171;
+  font-size: 12px;
+}
+.empty {
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+  padding: 24px 0;
+}
+.word-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #0f172a;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border: 1px solid #334155;
+}
+.word-view {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.word-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+.severity-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 99px;
+}
+.word-group {
+  font-size: 11px;
+  color: #94a3b8;
+  background: #1e293b;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.word-edit {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.word-actions {
+  display: flex;
+  gap: 6px;
+}
+.test-result {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.test-result--safe {
+  background: #052e16;
+  color: #4ade80;
+  border: 1px solid #166534;
+}
+.test-result--hit {
+  background: #450a0a;
+  color: #fca5a5;
+  border: 1px solid #b91c1c;
+}
+.sensitive-word {
+  background: #b91c1c;
+  color: #fecaca;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
 </style>
 ```
 
@@ -918,6 +1099,7 @@ git commit -m "feat: create SensitiveWordsPage with CRUD table, add form, and te
 ### Task 8: Register route and sidebar navigation
 
 **Files:**
+
 - Modify: `src/renderer/src/router/index.ts`
 - Modify: `src/renderer/src/components/AppLayout.vue`
 
@@ -963,6 +1145,7 @@ git commit -m "feat: register sensitive words route and sidebar nav"
 ### Task 9: Update plan.md mapping
 
 **Files:**
+
 - Modify: `docs/plan.md`
 
 - [ ] **Step 1: Add new mapping entries**
@@ -1004,6 +1187,7 @@ git commit -m "docs: update plan.md with sensitive words management mapping"
 ```bash
 npm run typecheck
 ```
+
 Expected: No type errors in any of the modified files.
 
 - [ ] **Step 2: Run lint**
@@ -1011,6 +1195,7 @@ Expected: No type errors in any of the modified files.
 ```bash
 npm run lint
 ```
+
 Expected: No lint errors.
 
 - [ ] **Step 3: Build**
@@ -1018,6 +1203,7 @@ Expected: No lint errors.
 ```bash
 npm run build
 ```
+
 Expected: Build succeeds.
 
 - [ ] **Step 4: Commit**
@@ -1032,6 +1218,7 @@ git commit -m "chore: fix typecheck and lint issues after sensitive words featur
 ## Self-Review
 
 **1. Spec coverage:**
+
 - Backend CRUD API ✓ (Task 1: types + paths, Task 2: SQLite handlers, Task 3: mock integration)
 - Frontend CRUD page ✓ (Task 7: SensitiveWordsPage.vue with list, add, edit, delete)
 - Navigation integration ✓ (Task 8: router + sidebar)
@@ -1041,6 +1228,7 @@ git commit -m "chore: fix typecheck and lint issues after sensitive words featur
 **2. Placeholder scan:** No TBD/TODO/fill-in patterns. All code is complete in every task.
 
 **3. Type consistency:**
+
 - `SensitiveWordItem` has: `id, word, severity, group, created_at, updated_at` — consistent across types.ts, mock-api-db.ts, and SensitiveWordsPage.vue
 - DB row type `SensitiveWordRow` uses `group_name` (SQL column convention), mapped to `group` in API response — consistent
 - Error codes: `SW_WORD_EXISTS`, `SW_WORD_INVALID`, `SW_WORD_NOT_FOUND`, `SW_BATCH_TOO_LARGE` — consistent

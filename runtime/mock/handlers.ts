@@ -330,8 +330,17 @@ export async function mockCall<T>(
     case ApiPaths.MODERATION_CHECK: {
       await randomDelay()
       const req = body as ModerationCheckRequest
-      const MOCK_SENSITIVE_WORDS = ['违禁', '敏感词', '违规', '赌博', '色情', '诈骗', '暴力', '血腥']
-      const hit = MOCK_SENSITIVE_WORDS.filter(w => (req?.text ?? '').includes(w))
+      const MOCK_SENSITIVE_WORDS = [
+        '违禁',
+        '敏感词',
+        '违规',
+        '赌博',
+        '色情',
+        '诈骗',
+        '暴力',
+        '血腥'
+      ]
+      const hit = MOCK_SENSITIVE_WORDS.filter((w) => (req?.text ?? '').includes(w))
       return ok<ModerationCheckResponse>({
         risk_level: hit.length > 0 ? 'high' : 'safe',
         flagged_terms: hit,
@@ -607,7 +616,16 @@ export async function mockCall<T>(
     case ApiPaths.WRITER_SENSITIVE_CHECK: {
       await randomDelay()
       const req = body as WriterSensitiveCheckRequest
-      const MOCK_SENSITIVE_WORDS = ['违禁', '敏感词', '违规', '赌博', '色情', '诈骗', '暴力', '血腥']
+      const MOCK_SENSITIVE_WORDS = [
+        '违禁',
+        '敏感词',
+        '违规',
+        '赌博',
+        '色情',
+        '诈骗',
+        '暴力',
+        '血腥'
+      ]
       const hitWords = MOCK_SENSITIVE_WORDS.filter((w) => (req?.text ?? '').includes(w))
       return ok<WriterSensitiveCheckResponse>({
         hit_words: hitWords,
