@@ -57,7 +57,12 @@ export const ApiPaths = {
   ASR_PAUSE: '/api/v1/asr/pause',
   ASR_STOP: '/api/v1/asr/stop',
   ASR_CORRECTION: '/api/v1/asr/correction',
-  ASR_EXPORT: '/api/v1/asr/export'
+  ASR_EXPORT: '/api/v1/asr/export',
+  // M3 - Sensitive words management
+  SENSITIVE_WORDS_LIST: '/api/v1/sensitive-words',
+  SENSITIVE_WORDS_CREATE: '/api/v1/sensitive-words/create',
+  SENSITIVE_WORDS_UPDATE: '/api/v1/sensitive-words/update',
+  SENSITIVE_WORDS_DELETE: '/api/v1/sensitive-words/delete'
 } as const
 
 export type ApiPath = (typeof ApiPaths)[keyof typeof ApiPaths]
@@ -101,7 +106,12 @@ export enum ErrorCode {
   ACCOUNT_IN_USE = 'ACCOUNT_IN_USE',
   ASR_DEVICE_BUSY = 'ASR_DEVICE_BUSY',
   ASR_NOT_RUNNING = 'ASR_NOT_RUNNING',
-  ASR_EXPORT_EMPTY = 'ASR_EXPORT_EMPTY'
+  ASR_EXPORT_EMPTY = 'ASR_EXPORT_EMPTY',
+  // Sensitive words
+  SW_WORD_EXISTS = 'SW_WORD_EXISTS',
+  SW_WORD_INVALID = 'SW_WORD_INVALID',
+  SW_WORD_NOT_FOUND = 'SW_WORD_NOT_FOUND',
+  SW_BATCH_TOO_LARGE = 'SW_BATCH_TOO_LARGE'
 }
 
 export const ErrorCodeMessage: Record<ErrorCode, string> = {
@@ -139,7 +149,11 @@ export const ErrorCodeMessage: Record<ErrorCode, string> = {
   [ErrorCode.ACCOUNT_IN_USE]: '账号正在使用中，无法删除',
   [ErrorCode.ASR_DEVICE_BUSY]: '音频设备被占用，请切换设备',
   [ErrorCode.ASR_NOT_RUNNING]: '识别服务未运行',
-  [ErrorCode.ASR_EXPORT_EMPTY]: '暂无可导出的文本记录'
+  [ErrorCode.ASR_EXPORT_EMPTY]: '暂无可导出的文本记录',
+  [ErrorCode.SW_WORD_EXISTS]: '敏感词已存在',
+  [ErrorCode.SW_WORD_INVALID]: '敏感词无效（1-50字）',
+  [ErrorCode.SW_WORD_NOT_FOUND]: '敏感词不存在',
+  [ErrorCode.SW_BATCH_TOO_LARGE]: '批量导入最多100条'
 }
 
 // ---------------------------------------------------------------------------
@@ -573,3 +587,39 @@ export type AsrCorrectionResponse = { segment_id: string; updated_at: number }
 
 export type AsrExportRequest = { session_id: string; format: AsrExportFormat }
 export type AsrExportResponse = { download_url: string; format: AsrExportFormat }
+
+// ---------------------------------------------------------------------------
+// Sensitive Words Management API  (/api/v1/sensitive-words)
+// ---------------------------------------------------------------------------
+
+export type SensitiveWordItem = {
+  id: string
+  word: string
+  severity: 'high' | 'medium' | 'low'
+  group: string
+  created_at: number
+  updated_at: number
+}
+
+export type SensitiveWordsListResponse = {
+  items: SensitiveWordItem[]
+  total: number
+}
+
+export type SensitiveWordCreateRequest = {
+  word: string
+  severity?: 'high' | 'medium' | 'low'
+  group?: string
+}
+export type SensitiveWordCreateResponse = SensitiveWordItem
+
+export type SensitiveWordUpdateRequest = {
+  id: string
+  word?: string
+  severity?: 'high' | 'medium' | 'low'
+  group?: string
+}
+export type SensitiveWordUpdateResponse = SensitiveWordItem
+
+export type SensitiveWordDeleteRequest = { id: string }
+export type SensitiveWordDeleteResponse = { id: string; deleted_at: number }

@@ -1,5 +1,7 @@
 # Development Docs Index V7
 
+> **⚠️ 已弃用（2026-05-08）** — 文档索引功能已由 [plan.md](plan.md) 替代，该文件是项目唯一执行规划基线。
+
 ## 文档清单
 
 1. requirements-spec-v7.md

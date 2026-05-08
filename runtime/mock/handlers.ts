@@ -44,6 +44,7 @@ import {
   type WriterGenerateRequest,
   type WriterRewriteRequest,
   type WriterSensitiveCheckRequest,
+  type WriterSensitiveCheckResponse,
   type WriterSaveDraftRequest,
   type WriterPublishRequest,
   type ModelItem,
@@ -61,7 +62,12 @@ import {
   type AccountHealthRequest,
   type AccountDeleteRequest,
   type AsrCorrectionRequest,
-  type AsrExportRequest
+  type AsrExportRequest,
+  type SensitiveWordItem,
+  type SensitiveWordsListResponse,
+  type SensitiveWordCreateRequest,
+  type SensitiveWordUpdateRequest,
+  type SensitiveWordDeleteRequest
 } from '@shared/types/api'
 
 function delay(ms: number): Promise<void> {
@@ -112,7 +118,11 @@ const sqliteBackedPaths = new Set<string>([
   ApiPaths.ACCOUNTS_AUTH,
   ApiPaths.ACCOUNTS_STATUS,
   ApiPaths.ACCOUNTS_HEALTH,
-  ApiPaths.ACCOUNTS_DELETE
+  ApiPaths.ACCOUNTS_DELETE,
+  ApiPaths.SENSITIVE_WORDS_LIST,
+  ApiPaths.SENSITIVE_WORDS_CREATE,
+  ApiPaths.SENSITIVE_WORDS_UPDATE,
+  ApiPaths.SENSITIVE_WORDS_DELETE
 ])
 
 async function callSqliteBackedApi<T>(
@@ -320,11 +330,12 @@ export async function mockCall<T>(
     case ApiPaths.MODERATION_CHECK: {
       await randomDelay()
       const req = body as ModerationCheckRequest
-      const isHigh = req?.text?.includes('违禁') ?? false
+      const MOCK_SENSITIVE_WORDS = ['违禁', '敏感词', '违规', '赌博', '色情', '诈骗', '暴力', '血腥']
+      const hit = MOCK_SENSITIVE_WORDS.filter(w => (req?.text ?? '').includes(w))
       return ok<ModerationCheckResponse>({
-        risk_level: isHigh ? 'high' : 'safe',
-        flagged_terms: isHigh ? ['违禁'] : [],
-        suggestion: isHigh ? '请修改违禁内容后重试' : undefined
+        risk_level: hit.length > 0 ? 'high' : 'safe',
+        flagged_terms: hit,
+        suggestion: hit.length > 0 ? '内容包含敏感词，请修改后重试' : undefined
       }) as ApiResponse<T>
     }
 
@@ -596,8 +607,9 @@ export async function mockCall<T>(
     case ApiPaths.WRITER_SENSITIVE_CHECK: {
       await randomDelay()
       const req = body as WriterSensitiveCheckRequest
-      const hitWords = (req?.text || '').includes('违禁') ? ['违禁'] : []
-      return ok<{ hit_words: string[]; safe: boolean }>({
+      const MOCK_SENSITIVE_WORDS = ['违禁', '敏感词', '违规', '赌博', '色情', '诈骗', '暴力', '血腥']
+      const hitWords = MOCK_SENSITIVE_WORDS.filter((w) => (req?.text ?? '').includes(w))
+      return ok<WriterSensitiveCheckResponse>({
         hit_words: hitWords,
         safe: hitWords.length === 0
       }) as ApiResponse<T>
@@ -925,3 +937,6 @@ export async function mockCall<T>(
       return { ok: false, data: null, message: `Unknown mock path: ${path}` }
   }
 }
+
+// Re-export for dev-cpu mode dual routing
+export { callSqliteBackedApi as trySqliteBackedApi }

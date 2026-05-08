@@ -46,7 +46,12 @@ import {
   type WriterSensitiveCheckRequest,
   type WriterStyle,
   type AccountAuthRequest,
-  type PolicyPublishRequest
+  type PolicyPublishRequest,
+  type SensitiveWordCreateRequest,
+  type SensitiveWordDeleteRequest,
+  type SensitiveWordItem,
+  type SensitiveWordsListResponse,
+  type SensitiveWordUpdateRequest
 } from '../../src/shared/types/api'
 
 const SCRIPT_STATUS_VALUES = new Set<ScriptStatus>(['draft', 'enabled', 'disabled'])
@@ -109,6 +114,17 @@ type AccountRow = {
   created_at: number
   updated_at: number
 }
+
+type SensitiveWordRow = {
+  id: string
+  word: string
+  severity: 'high' | 'medium' | 'low'
+  group_name: string
+  created_at: number
+  updated_at: number
+}
+
+const SW_SEVERITY_VALUES = new Set<string>(['high', 'medium', 'low'])
 
 type ScriptSeedItem = {
   title: string
@@ -406,6 +422,15 @@ function initSchema(db: DatabaseSync): void {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS sensitive_words (
+      id TEXT PRIMARY KEY,
+      word TEXT NOT NULL UNIQUE,
+      severity TEXT NOT NULL DEFAULT 'medium',
+      group_name TEXT NOT NULL DEFAULT 'default',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
   `)
 }
 
@@ -485,6 +510,35 @@ function seedData(db: DatabaseSync): void {
       createdAt
     )
   }
+
+  const swCountRow = db.prepare('SELECT COUNT(*) AS c FROM sensitive_words').get() as
+    | { c: number }
+    | undefined
+  if ((swCountRow?.c ?? 0) === 0) {
+    const defaultWords: { word: string; severity: 'high' | 'medium' | 'low'; group: string }[] = [
+      { word: '违禁', severity: 'high', group: 'default' },
+      { word: '敏感词', severity: 'high', group: 'default' },
+      { word: '违规', severity: 'high', group: 'default' },
+      { word: '赌博', severity: 'high', group: 'illegal' },
+      { word: '色情', severity: 'high', group: 'illegal' },
+      { word: '毒品', severity: 'high', group: 'illegal' },
+      { word: '诈骗', severity: 'high', group: 'illegal' },
+      { word: '政治', severity: 'high', group: 'politics' },
+      { word: '宗教信仰', severity: 'medium', group: 'politics' },
+      { word: '诋毁', severity: 'medium', group: 'insult' },
+      { word: '歧视', severity: 'medium', group: 'insult' },
+      { word: '诅咒', severity: 'medium', group: 'insult' },
+      { word: '暴力', severity: 'high', group: 'violence' },
+      { word: '血腥', severity: 'high', group: 'violence' },
+      { word: '恐怖主义', severity: 'high', group: 'violence' }
+    ]
+    for (const sw of defaultWords) {
+      const t = Date.now()
+      db.prepare(
+        'INSERT INTO sensitive_words (id, word, severity, group_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(randomUUID(), sw.word, sw.severity, sw.group, t, t)
+    }
+  }
 }
 
 function getDatabase(): DatabaseSync {
@@ -534,6 +588,12 @@ function fetchAccountById(db: DatabaseSync, id: string): AccountRow | undefined 
       'SELECT id, name, platform, status, auth_token, created_at, updated_at FROM accounts WHERE id = ?'
     )
     .get(id) as AccountRow | undefined
+}
+
+function fetchSensitiveWordById(db: DatabaseSync, id: string): SensitiveWordRow | undefined {
+  return db
+    .prepare('SELECT id, word, severity, group_name, created_at, updated_at FROM sensitive_words WHERE id = ?')
+    .get(id) as SensitiveWordRow | undefined
 }
 
 export async function handleMockApiCall<T>(
@@ -1238,6 +1298,99 @@ export async function handleMockApiCall<T>(
         id: req.id,
         deleted_at: now()
       }) as ApiResponse<T>
+    }
+
+    // -------------------------------------------------------------------------
+    // M3 - Sensitive Words Management
+    // -------------------------------------------------------------------------
+
+    case ApiPaths.SENSITIVE_WORDS_LIST: {
+      const rows = db
+        .prepare(
+          'SELECT id, word, severity, group_name, created_at, updated_at FROM sensitive_words ORDER BY group_name, word ASC'
+        )
+        .all() as SensitiveWordRow[]
+      const items: SensitiveWordItem[] = rows.map((r) => ({
+        id: r.id,
+        word: r.word,
+        severity: r.severity,
+        group: r.group_name,
+        created_at: r.created_at,
+        updated_at: r.updated_at
+      }))
+      return ok<SensitiveWordsListResponse>({ items, total: items.length }) as ApiResponse<T>
+    }
+
+    case ApiPaths.SENSITIVE_WORDS_CREATE: {
+      const req = body as SensitiveWordCreateRequest
+      const word = req?.word?.trim() ?? ''
+      if (!word || word.length > 50) {
+        return err<SensitiveWordItem>(ErrorCode.SW_WORD_INVALID, '敏感词无效（1-50字）') as ApiResponse<T>
+      }
+      const exists = db.prepare('SELECT id FROM sensitive_words WHERE word = ?').get(word) as
+        | { id: string }
+        | undefined
+      if (exists) {
+        return err<SensitiveWordItem>(ErrorCode.SW_WORD_EXISTS, '敏感词已存在') as ApiResponse<T>
+      }
+      const severity = req.severity && SW_SEVERITY_VALUES.has(req.severity) ? req.severity : 'medium'
+      const group = req.group?.trim() || 'default'
+      const swId = randomUUID()
+      const createdAt = Date.now()
+      db.prepare(
+        'INSERT INTO sensitive_words (id, word, severity, group_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(swId, word, severity, group, createdAt, createdAt)
+      const row = fetchSensitiveWordById(db, swId)
+      if (!row) {
+        return err<SensitiveWordItem>(ErrorCode.NO_ACTIVE_TASK, '创建失败') as ApiResponse<T>
+      }
+      return ok<SensitiveWordItem>({
+        id: row.id, word: row.word, severity: row.severity,
+        group: row.group_name, created_at: row.created_at, updated_at: row.updated_at
+      }) as ApiResponse<T>
+    }
+
+    case ApiPaths.SENSITIVE_WORDS_UPDATE: {
+      const req = body as SensitiveWordUpdateRequest
+      const current = req?.id ? fetchSensitiveWordById(db, req.id) : undefined
+      if (!current) {
+        return err<SensitiveWordItem>(ErrorCode.SW_WORD_NOT_FOUND, '敏感词不存在') as ApiResponse<T>
+      }
+      const word = req.word !== undefined ? req.word.trim() : current.word
+      const severity = req.severity !== undefined && SW_SEVERITY_VALUES.has(req.severity) ? req.severity : current.severity
+      const group = req.group !== undefined ? req.group.trim() || 'default' : current.group_name
+      if (!word || word.length > 50) {
+        return err<SensitiveWordItem>(ErrorCode.SW_WORD_INVALID, '敏感词无效（1-50字）') as ApiResponse<T>
+      }
+      const dup = db.prepare('SELECT id FROM sensitive_words WHERE word = ? AND id <> ?').get(word, req.id) as
+        | { id: string }
+        | undefined
+      if (dup) {
+        return err<SensitiveWordItem>(ErrorCode.SW_WORD_EXISTS, '敏感词已存在') as ApiResponse<T>
+      }
+      db.prepare(
+        'UPDATE sensitive_words SET word = ?, severity = ?, group_name = ?, updated_at = ? WHERE id = ?'
+      ).run(word, severity, group, Date.now(), req.id)
+      const row = fetchSensitiveWordById(db, req.id)
+      if (!row) {
+        return err<SensitiveWordItem>(ErrorCode.NO_ACTIVE_TASK, '更新失败') as ApiResponse<T>
+      }
+      return ok<SensitiveWordItem>({
+        id: row.id, word: row.word, severity: row.severity,
+        group: row.group_name, created_at: row.created_at, updated_at: row.updated_at
+      }) as ApiResponse<T>
+    }
+
+    case ApiPaths.SENSITIVE_WORDS_DELETE: {
+      const req = body as SensitiveWordDeleteRequest
+      if (!req?.id) {
+        return err<{ id: string; deleted_at: number }>(ErrorCode.SW_WORD_NOT_FOUND, '敏感词不存在') as ApiResponse<T>
+      }
+      const result = db.prepare('DELETE FROM sensitive_words WHERE id = ?').run(req.id) as { changes: number }
+      if (result.changes === 0) {
+        return err<{ id: string; deleted_at: number }>(ErrorCode.SW_WORD_NOT_FOUND, '敏感词不存在') as ApiResponse<T>
+      }
+      return ok<{ id: string; deleted_at: number }>({ id: req.id, deleted_at: Date.now() }) as ApiResponse<T>
     }
 
     default:

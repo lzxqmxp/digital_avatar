@@ -78,6 +78,12 @@ export type ActionId =
   | 'btn_asr_stop'
   | 'btn_asr_correction_submit'
   | 'btn_asr_export'
+  // Page K: 敏感词库
+  | 'btn_sw_new'
+  | 'btn_sw_save'
+  | 'btn_sw_delete'
+  | 'btn_sw_test'
+  | 'btn_sw_batch_import'
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error' | 'disabled'
 

@@ -155,7 +155,7 @@ digital_avatar/
 ├── docs/                      # 项目文档
 │   ├── requirements-spec-v7.md       # 需求规格说明书
 │   ├── technical-design-v7.md        # 技术设计文档
-│   ├── plan-v6.md                    # 项目计划
+│   ├── plan.md                       # 项目计划（唯一基线）
 │   └── button-action-api-map-v1.md   # 按钮-API 映射表
 ├── electron/                  # Electron 主进程
 │   ├── main/
@@ -500,7 +500,7 @@ npm run dev
 
 - [需求规格说明书](docs/requirements-spec-v7.md) - 按钮级需求定义
 - [技术设计文档](docs/technical-design-v7.md) - 技术架构与接口设计
-- [项目计划](docs/plan-v6.md) - 里程碑与实施路径
+- [项目计划](docs/plan.md) - 里程碑与实施路径（唯一基线）
 - [按钮-API 映射表](docs/button-action-api-map-v1.md) - 按钮与接口对应关系
 
 ## 🗺️ 开发路线图

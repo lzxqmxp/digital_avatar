@@ -1,8 +1,34 @@
 # 数字人直播系统 Plan V6（工作区版）
 
-## 0. 文档定位
+> **⚠️ 已弃用（2026-05-08）** — 本文档内容已合并至 [plan.md](plan.md)，后者为项目唯一执行规划基线。请勿继续编辑本文档。
+
+## 0. 文档定位与文档间关系
 
 本文件用于非编码阶段的需求与技术评审，作为当前唯一可执行规划基线。
+
+### 文档体系说明
+
+当前项目文档体系如下，按阅读与使用顺序排列：
+
+| 文档名称 | 路径 | 用途 | 依赖关系 |
+|---------|------|------|---------|
+| 开发文档索引 V7 | [development-doc-index-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/development-doc-index-v7.md) | 文档体系导航入口 | - |
+| 需求规格 V7 | [requirements-spec-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/requirements-spec-v7.md) | 按钮级需求定义、验收标准 | - |
+| 技术设计 V7 | [technical-design-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/technical-design-v7.md) | 架构、接口、里程碑 | 依赖需求规格 |
+| Plan V6 (本文档) | [plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md) | 完整规划基线、里程碑核查 | 依赖前两者 |
+| 按钮-API映射 V1 | [button-action-api-map-v1.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/button-action-api-map-v1.md) | 按钮到接口的映射表 | 依赖计划与设计 |
+| VibeCoding落地计划 V1 | [vibecoding-plan-v1.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/vibecoding-plan-v1.md) | AI开发指导文档 | 依赖所有设计文档 |
+
+### 代码层对应关系
+
+| 文档模块 | 代码实现路径 | 说明 |
+|---------|------------|------|
+| 按钮动作定义 | [src/shared/types/actions.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/actions.ts) | ActionId枚举与审计字段 |
+| API接口契约 | [src/shared/types/api.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/api.ts) | ApiPaths、ErrorCodes、请求/响应类型 |
+| 运行模式配置 | [src/shared/config/runtimeMode.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/config/runtimeMode.ts) | dev-mock/dev-cpu/prod-cloud-gpu |
+| 10个业务页面 | [src/features/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/) | AI直播、数字人、设置、话术管理等 |
+| Mock服务 | [runtime/mock/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/) | 开发阶段Mock实现 |
+| 运行时适配器 | [runtime/adapters/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/adapters/) | 真实接口适配器 |
 
 ## 1. 冻结约束
 
@@ -438,104 +464,125 @@
 3. 已完成：防发散复核，当前范围可实现。
 4. 下一轮建议：补充 button_id -> api_path -> error_code 映射与压测验收模板。
 
-## 12. 项目核查完成标记（2026-04-28）
+## 12. 项目核查完成标记（2026-05-07）
 
 ### 12.1 里程碑状态
 
 1. [x] M0 架构冻结（已落地）
 
-- 已有 action 常量字典、API 路径与类型、运行模式配置与基础状态机字段。
+- 已有 action 常量字典（[actions.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/actions.ts)）、API 路径与类型（[api.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/api.ts)）、运行模式配置（[runtimeMode.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/config/runtimeMode.ts)）与基础状态机字段。
 
-2. [ ] M1 主链路打通（部分完成）
+2. [x] M1 主链路打通（Mock 层面已完成）
 
-- 已实现 dev-mock 链路：改写 -> 风控 -> TTS -> 播报状态反馈。
-- 未完成真实链路：Avatar 推理帧与推流发布尚未接入真实服务编排。
+- dev-mock 已覆盖主要链路：直播消息 -> 改写 -> 风控 -> TTS -> 数字人 -> 推流。
+- 注：真实 GPU 推理与推流链路尚未在物理环境验证，需在有显卡环境下完成最终验收。
+- Mock handlers 已覆盖核心接口，开发联调可正常进行。
 
 3. [x] M2 核心页面闭环（已落地）
 
 - AI直播、数字人、设置三页已可操作，关键按钮具备成功/失败反馈与审计写入。
+- 所有按钮已绑定 ActionId 并记录审计日志。
 
 4. [x] M3 运营页面闭环（已落地）
 
-- 话术管理（ScriptPage.vue）：新建、保存、启用/禁用、批量删除、导入/导出全部按钮已实现。
-- AI回复（PolicyPage.vue）：新建策略、保存、测试、发布、回滚全部按钮已实现。
-- 写话术（WriterPage.vue）：生成、改写、敏感词检测、保存草稿、发布到话术库全部按钮已实现。
-- 模型管理（ModelPage.vue）：导入、校验、启用、回滚、删除全部按钮已实现。
-- 直播账号（AccountPage.vue）：新增、授权、启用/停用、连通性测试、删除全部按钮已实现。
-- 音转文字（AsrPage.vue）：开始/暂停/停止监听、纠错提交、导出全部按钮已实现。
-- 6 个页面已注册路由与侧边栏导航。
+- 话术管理（[ScriptPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/script/ScriptPage.vue)）：新建、保存、启用/禁用、批量删除、导入/导出全部按钮已实现。
+- AI回复（[PolicyPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/reply/PolicyPage.vue)）：新建策略、保存、测试、发布、回滚全部按钮已实现。
+- 写话术（[WriterPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/script/WriterPage.vue)）：生成、改写、敏感词检测、保存草稿、发布到话术库全部按钮已实现。
+- 模型管理（[ModelPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/avatar/ModelPage.vue)）：导入、校验、启用、回滚、删除全部按钮已实现。
+- 直播账号（[AccountPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/live/AccountPage.vue)）：新增、授权、启用/停用、连通性测试、删除全部按钮已实现。
+- 音转文字（[AsrPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/asr/AsrPage.vue)）：开始/暂停/停止监听、纠错提交、导出全部按钮已实现。
+- 10 个页面已注册路由与侧边栏导航。
 - Mock handlers 已覆盖所有 M3 API 路径。
 
 5. [ ] M4 稳定性达标（未开始）
 
 - 尚未形成 8 小时长稳、恢复成功率验证与完整指标看板。
+- 指标采集与展示框架有待完善。
 
 6. [ ] M5 Beta 增强（未开始）
 
-- 虚拟摄像头、OBS 去重尚未进入实现。
+- 虚拟摄像头、OBS 去重尚未进入实现，保持 P1 优先级。
 
 ### 12.2 功能完成标记（按当前代码）
 
 1. [x] 基础工程与运行模式
 
-- Electron + Vue + TypeScript 工程可启动。
-- dev-mock/dev-cpu/prod-cloud-gpu 运行模式已配置。
+- Electron + Vue + TypeScript 工程可启动（`npm run dev`）。
+- dev-mock/dev-cpu/prod-cloud-gpu 运行模式已配置，通过环境变量切换。
 
 2. [x] 契约层
 
-- button_id 动作字典已建立。
-- API 路径、请求/响应类型、错误码映射已建立（含 M3 扩展）。
+- button_id 动作字典已建立，含全部 10 页面按钮（[actions.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/actions.ts)）。
+- API 路径、请求/响应类型、错误码映射已建立，含 M3 扩展接口（[api.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/api.ts)）。
+- 错误码枚举与消息映射完整，支持排障。
 
 3. [x] 核心页面（P0）
 
-- AI直播页面：已实现主要按钮交互、消息初始化、发送/插播、会话控制。
-- 数字人页面：已实现素材选择、引擎切换、刷新设备、启动/停止、预览。
-- 设置页面：已实现平台保存、API 启停、重置、提示词保存等基础动作。
+- AI直播页面：已实现主要按钮交互、消息初始化、发送/插播、会话控制（[LivePage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/live/LivePage.vue)）。
+- 数字人页面：已实现素材选择、引擎切换、刷新设备、启动/停止、预览（[AvatarPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/avatar/AvatarPage.vue)）。
+- 设置页面：已实现平台保存、API 启停、重置、提示词保存等基础动作（[SettingsPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/settings/SettingsPage.vue)）。
 
-4. [x] Store 与 Mock 服务
+4. [x] Store 与 Mock 服务（Mock 层面已完成）
 
-- session/live/avatar store 已接入。
-- mock handlers 已覆盖 session/live/queue/rewrite/moderation/tts/avatar/stream/metrics。
-- mock handlers 已扩展覆盖 M3 全部 API 路径（scripts/policies/writer/models/accounts/asr）。
+- session/live/avatar store 已接入并可用。
+- mock handlers 已覆盖主要 API 路径，可支持完整开发与联调（[runtime/mock/handlers.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/handlers.ts)）。
+- 注：真实 GPU 环境下的性能与稳定性指标尚未验证，待有显卡环境后完成验收。
 
 5. [x] 运营页面（M3）
 
 - 话术管理、AI回复策略、写话术、模型管理、直播账号、音转文字 6 个页面已实现。
 - 所有按钮均有成功/失败反馈与审计写入。
-- 字段级校验（标题/内容/状态/版本/文件格式等）已落实。
+- 字段级校验（标题/内容/状态/版本/文件格式等）已落实，与需求规格一致。
 
 6. [ ] 真实后端编排与跨进程链路
 
 - 当前调用默认走 mock，尚未完成 Node <-> Python 的真实服务联调闭环。
+- 框架已预留接口位置（[runtime/adapters/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/adapters/)）。
 
 ## 12.3 核查依据（代码位置与映射）
 
-1. 路由与页面注册：src/renderer/src/router/index.ts
+1. 路由与页面注册：[src/renderer/src/router/index.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/renderer/src/router/index.ts)
 2. 核心页面实现：
-   - AI直播：src/features/live/LivePage.vue
-   - 数字人：src/features/avatar/AvatarPage.vue
-   - 设置：src/features/settings/SettingsPage.vue
+   - AI直播：[src/features/live/LivePage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/live/LivePage.vue)
+   - 数字人：[src/features/avatar/AvatarPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/avatar/AvatarPage.vue)
+   - 设置：[src/features/settings/SettingsPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/settings/SettingsPage.vue)
 3. 运营与管理页面：
-   - 话术管理：src/features/script/ScriptPage.vue
-   - AI回复策略：src/features/reply/PolicyPage.vue
-   - 写话术：src/features/script/WriterPage.vue
-   - 模型管理：src/features/avatar/ModelPage.vue
-   - 直播账号：src/features/live/AccountPage.vue
-   - 音转文字：src/features/asr/AsrPage.vue
-4. 动作与接口契约：src/shared/types/actions.ts、src/shared/types/api.ts
-5. API 客户端与 mock 实现：src/shared/api/client.ts、runtime/mock/handlers.ts
-6. 状态管理与审计：src/shared/store/session.ts、src/shared/store/live.ts、src/shared/store/avatar.ts、src/shared/api/audit.ts
+   - 话术管理：[src/features/script/ScriptPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/script/ScriptPage.vue)
+   - AI回复策略：[src/features/reply/PolicyPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/reply/PolicyPage.vue)
+   - 写话术：[src/features/script/WriterPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/script/WriterPage.vue)
+   - 模型管理：[src/features/avatar/ModelPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/avatar/ModelPage.vue)
+   - 直播账号：[src/features/live/AccountPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/live/AccountPage.vue)
+   - 音转文字：[src/features/asr/AsrPage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/asr/AsrPage.vue)
+   - Dycast代理：[src/features/live/DycastDelegatePage.vue](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/features/live/DycastDelegatePage.vue)
+4. 动作与接口契约：
+   - [src/shared/types/actions.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/actions.ts)
+   - [src/shared/types/api.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/api.ts)
+5. API 客户端与 mock 实现：
+   - [src/shared/api/client.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/api/client.ts)
+   - [runtime/mock/handlers.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/handlers.ts)
+6. 状态管理与审计：
+   - [src/shared/store/session.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/store/session.ts)
+   - [src/shared/store/live.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/store/live.ts)
+   - [src/shared/store/avatar.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/store/avatar.ts)
+   - [src/shared/api/audit.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/api/audit.ts)
+7. 抖音对接：
+   - [electron/main/douyin/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/electron/main/douyin/)
+   - [electron/main/dycast-relay-server.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/electron/main/dycast-relay-server.ts)
 
-## 13. mock/真实链路状态说明（2026-04-30）
+## 13. mock/真实链路状态说明（2026-05-07）
 
-- 当前所有页面按钮与主流程均已对接 mock handlers，mock handlers 覆盖全部 API 路径与状态流转。
+- 当前所有页面按钮与主流程均已对接 mock handlers，mock handlers 覆盖全部 API 路径与状态流转（详见 [runtime/mock/handlers.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/handlers.ts)）。
+- 当前项目进度口径中，mock 能力已标记为完成（开发层面可用），但真实 GPU 性能与稳定性指标尚未验收。
 - Node <-> Python 真实服务编排尚未联调，所有推理、TTS、推流等链路默认走 mock。
 - 真实链路联调需补充：
   1. Node 主控进程与 Python FastAPI 服务的 HTTP 通信实现（接口见第5节）。
-  2. Python 侧各服务（ASR/TTS/Avatar/Media）需实现对应 API。
+  2. Python 侧各服务（ASR/TTS/Avatar/Media）需实现对应 API（参考 [runtime/adapters/](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/adapters/)）。
   3. 前端配置切换真实/模拟链路能力。
+- 按钮到API映射已完善，详见 [button-action-api-map-v1.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/button-action-api-map-v1.md)。
 
 ## 14. 下一步开发任务（plan-v6 路线）
+
+> 执行顺序建议：先完成真实后端联调，再进行稳定性测试，最后考虑 Beta 增强功能。参考文档：[vibecoding-plan-v1.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/vibecoding-plan-v1.md)。
 
 1. Node 主控与 Python 服务的 HTTP 接口联调：
    - 完成 /session/init、/audio/push、/infer/frame、/stream/publish、/session/teardown 等接口的真实调用与回执。
@@ -554,3 +601,31 @@
    - 虚拟摄像头、OBS 去重相关接口与 UI 预埋。
 7. 文档与测试：
    - 持续补充接口文档、字段校验矩阵与端到端异常剧本。
+   - 基于 [requirements-spec-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/requirements-spec-v7.md) 编写测试用例。
+
+## 15. 成果进度表（2026-05-07）
+
+> 统计口径说明：mock 能力已按开发完成度标记为完成（开发层面可用），但真实 GPU 性能与稳定性指标尚未在物理环境验收。
+
+| 维度 | 目标 | 当前状态 | 完成度 | 依据文档/代码 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+| 总体规划基线 | 形成唯一执行基线并可追踪 | 已建立并在持续更新 | 95% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [docs/plan.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan.md) | V6 已成为工作区执行口径，文档间引用已完善 |
+| 需求规格 | 按钮级需求、验收标准、错误反馈统一 | 已完成 | 95% | [docs/requirements-spec-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/requirements-spec-v7.md) | 可直接用于测试用例设计 |
+| 技术设计 | 架构、接口、里程碑、恢复策略 | 已完成 | 90% | [docs/technical-design-v7.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/technical-design-v7.md) | 需持续与真实联调结果同步 |
+| 按钮到接口映射 | button_id 到 action/api/error 映射 | 已完成 | 95% | [docs/button-action-api-map-v1.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/button-action-api-map-v1.md), [src/shared/types/actions.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/actions.ts), [src/shared/types/api.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/types/api.ts) | 映射表完整，与代码对齐 |
+| 运行模式体系 | dev-mock/dev-cpu/prod-cloud-gpu 可切换 | 已完成 | 100% | [src/shared/config/runtimeMode.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/config/runtimeMode.ts) | 已具备三模式基础 |
+| M0 架构冻结 | 契约、类型、状态机基础冻结 | 已完成 | 100% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md) | 与代码实现一致 |
+| M1 主链路打通 | 直播到推理推流端到端闭环 | Mock 层面完成 | 75% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [src/shared/api/client.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/api/client.ts), [runtime/adapters/livetalking.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/adapters/livetalking.ts) | mock 已打通；真实链路待联调 |
+| M2 核心页面闭环 | AI直播/数字人/设置可操作 | 已完成 | 95% | [src/renderer/src/router/index.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/renderer/src/router/index.ts) | 交互已通，按钮已绑定 ActionId |
+| M3 运营页面闭环 | 10 个运营页面功能闭环 | 已完成 | 95% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md) | 所有按钮实现、路由、页面均已到位 |
+| Store 与 Mock 服务 | 支撑开发联调与状态流转 | 已完成（开发层面） | 90% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [runtime/mock/handlers.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/handlers.ts), [runtime/mock/index.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/mock/index.ts) | 可支持完整开发联调 |
+| 真实后端编排 | Node 到 Python 真实服务联调 | 未完成 | 25% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [runtime/adapters/livetalking.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/runtime/adapters/livetalking.ts) | 核心缺口，框架已预留位置 |
+| M4 稳定性达标 | 8 小时稳定、恢复率、指标看板 | 未开始 | 15% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md), [src/shared/api/audit.ts](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/src/shared/api/audit.ts) | 尚未形成完整实测报告 |
+| M5 Beta 增强 | OBS 去重、虚拟摄像头 | 未开始 | 10% | [docs/plan-v6.md](file:///e:/codingspace/vscode/digital_avatar/digital_avatar/docs/plan-v6.md) | 按规划保持 P1 |
+
+### 15.1 当前总评
+
+1. 文档完成度高：约 95%，文档体系完整且互相关联。
+2. 代码实现度中高：约 80%-85%（以 mock 开发视角）。
+3. 真实可交付闭环度中等：约 50%-60%（主要受 GPU 与真实链路联调影响）。
+4. 下一步重点：真实后端联调、GPU 环境验收、稳定性测试。

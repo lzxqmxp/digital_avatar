@@ -37,7 +37,8 @@ const navGroups: NavGroup[] = [
       { to: '/writer', label: '写话术', short: '写' },
       { to: '/models', label: '模型管理', short: '模' },
       { to: '/accounts', label: '直播账号', short: '账' },
-      { to: '/asr', label: '音转文字', short: '音' }
+      { to: '/asr', label: '音转文字', short: '音' },
+      { to: '/sensitive-words', label: '敏感词库', short: '敏' }
     ]
   }
 ]
@@ -82,6 +83,10 @@ const routeMeta: Record<string, { title: string; subtitle: string }> = {
   '/asr': {
     title: 'ASR转写中心',
     subtitle: '实时识别、纠错并导出文本。'
+  },
+  '/sensitive-words': {
+    title: '敏感词库管理',
+    subtitle: '管理敏感词列表，支持分组分级和批量维护。'
   }
 }
 

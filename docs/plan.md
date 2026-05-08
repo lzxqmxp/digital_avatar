@@ -1,784 +1,405 @@
-## Plan: Electron数字人直播系统需求规划
+# 数字人直播系统 — 开发计划（唯一基线）
 
-**Status**
+> **本文档是项目唯一的执行规划基线。** 所有历史版本文档（plan-v6、vibecoding-plan-v1、plan-real-backend-integration）已弃用，未来所有迭代在本文件中进行。
+>
+> 需求规格：[requirements-spec-v7.md](requirements-spec-v7.md) | 技术设计：[technical-design-v7.md](technical-design-v7.md) | 按钮映射：[button-action-api-map-v1.md](button-action-api-map-v1.md)
 
-- 已获用户批准进入实现阶段（2026-04-27）
-- 当前会话为计划模式，待切换到实现代理后执行
-
-目标是在用户本机部署 Electron 客户端与本地推理服务，利用 GPU 完成强实时数字人直播链路。推荐采用 双引擎 分层：Duix-Avatar 负责离线训练与资产生产，LiveTalking 负责实时驱动与流媒体输出；通过统一能力抽象，后续可平滑替换为商用链路。
+---
 
-**Steps**
+## 1. 项目概述
 
-1. 阶段一 需求基线冻结。将截图中的业务面板固化为 10 个系统模块：AI直播、话术管理、AI回复、写话术、模型管理、OBS去重、直播账号、数字人、音转文字、设置。补充角色与场景：主播运营、内容运营、技术运维。产出 P0/P1 范围和排除项。
-2. 阶段二 系统架构与边界设计。基于 步骤1，定义四层运行时：Electron壳层、实时推理服务层、流媒体网关层、配置与任务编排层。明确 Duix-Avatar 与 LiveTalking 的职责边界，并定义进程间通信协议与健康检查机制。 依赖 步骤1。
-3. 阶段三 实时链路需求定义。基于 步骤2，定义端到端强实时目标与预算：首包语音可听时延小于 300ms，口型同步首帧小于 500ms，稳定帧率不低于 25fps。要求 ASR、LLM、TTS、唇形推理、编码推流支持流式并行，避免串行阻塞。 依赖 步骤2。
-4. 阶段四 功能需求分解与优先级。并行拆解 P0 能力：实时直播驱动、数字人训练与语音克隆、直播运营工具。定义每个模块的输入输出、状态机、异常处理和验收口径。 与 步骤3 并行，最终汇总依赖 步骤3。
-5. 阶段五 GPU与部署需求固化。定义 Windows 首版最低配置、推荐配置、容量预估和资源调度策略。要求本地服务非 Docker 化交付，提供一键安装、驱动检查、模型缓存管理与故障自愈。 依赖 步骤2。
-6. 阶段六 合规与替换路线。由于当前选择先技术验证，P0 允许使用带限制的开源链路；同时在需求中预埋替换接口：TTS、模型推理、推流协议、虚拟摄像头驱动均需插件化，确保后续切换商用方案不改 UI 逻辑。 与 步骤5 并行。
-7. 阶段七 验证与里程碑。建立 Alpha、Beta、GA 三阶段准入标准，覆盖性能、稳定性、可运维性、回归测试与试运营指标，形成上线闸门。 依赖 步骤3、步骤4、步骤5、步骤6。
-
-**需求基线（P0）**
-
-1. 直播控制台：采集直播间消息、队列管理、自动改写、自动播报、手动插播、暂停与恢复。
-2. 数字人控制台：素材选择、推理模式切换、音频输入源配置、播放窗口控制、启动停止与状态回传。
-3. 模型与平台配置：上游大模型平台切换、API Key 与模型ID 管理、TTS引擎切换、参数模板保存与回滚。
-4. 语音链路：音转文字、文本改写、TTS 合成、唇形驱动、字幕同步。
-5. 推流链路：WebRTC 低时延预览、RTMP 外推流、虚拟摄像头输出。
-6. 账号与场景：直播账号管理、平台切换、话术库与场景策略绑定。
-7. 可观测性：端到端时延、inferfps、finalfps、GPU显存、队列长度、失败率实时可见。
-
-**需求基线（P1）**
-
-1. 多数字人热切换与镜头预设。
-2. 多并发会话与优先级调度。
-3. 故障恢复策略：模型服务崩溃自动拉起、推流自动重连。
-4. 多语种话术生成与跨平台模板管理。
-
-**范围排除（当前版本不纳入）**
-
-1. 多数字人同屏互动编排。
-2. 分布式集群调度与跨机器负载均衡。
-3. 企业级审计与多租户权限系统。
-
-**Relevant files**
-
-- 当前工作区为空，本轮仅输出系统需求规划，不涉及现有代码文件修改。
-
-**Verification**
-
-1. 时延验收：在推荐配置下，连续 30 分钟直播，口型首帧时延小于 500ms，95分位端到端时延满足目标。
-2. 帧率验收：稳定推流时 inferfps 与 finalfps 均不低于 25fps，且音画不同步率低于 2%。
-3. 稳定性验收：8 小时长稳运行无崩溃，服务自动恢复成功率不低于 99%。
-4. 兼容性验收：至少覆盖 3060、4070、4090 三档 GPU；覆盖 WebRTC、RTMP、虚拟摄像头三种输出链路。
-5. 业务验收：截图对应的核心操作链路可闭环完成，关键配置支持保存、加载与版本回滚。
-
-**Decisions**
-
-- 部署形态：本地客户端 + 本地推理服务（非 Docker）
-- MVP范围：实时直播驱动 + 直播运营工具 + 数字人训练与语音克隆
-- 性能目标：强实时，口型首帧小于 500ms
-- 商用策略：先技术验证，后续替换为无强制标识的商用链路
-
-**Further Considerations**
-
-1. 基础模型路线建议：首版默认 Wav2Lip（性能稳定）+ 可选 MuseTalk（质量优先），通过配置切换而非硬编码。
-2. 虚拟摄像头方案建议：优先系统兼容性高的成熟驱动实现，避免自研内核驱动带来的签名与分发风险。
-3. 交付方式建议：采用 安装包+模型管理器 的双组件交付，首次安装只下发基础模型，进阶模型按需下载。
-
-## V2 增量：按钮级需求规格（按你的最新决策收敛）
-
-### 决策快照（2026-04-27）
-
-- 首发平台：抖音直播
-- 单机并发：1 路会话优先稳定
-- 数字人资产：首版仅导入现有资产，不做本地训练流程
-- 音频输入：桌面音频回采优先
-- 外部依赖：允许云端 LLM/TTS
-- 最低显卡：RTX 3060
-
-### 按钮通用交互规范（适用于全站）
-
-1. 点击反馈：按钮点击后 100ms 内出现视觉反馈（loading 或状态变化）。
-2. 幂等规范：运行态按钮需防重入，二次点击给出提示而非重复执行。
-3. 错误反馈：统一 toast + 错误码 + 可复制诊断信息。
-4. 审计日志：所有“启动/停止/保存/删除/切换”按钮必须落操作日志。
-5. 回滚策略：配置类按钮必须支持“恢复上次生效值”。
-6. 埋点规范：至少记录 button_id、session_id、耗时、结果、错误码。
-
-### 页面 1：AI直播（P0）
-
-| 区域       | 按钮/控件            | 类型     | 前置条件               | 触发行为                       | 成功反馈           | 失败反馈                  | 验收指标            |
-| ---------- | -------------------- | -------- | ---------------------- | ------------------------------ | ------------------ | ------------------------- | ------------------- |
-| 直播接入   | 加载直播间数据       | 按钮     | 直播间ID非空且平台已选 | 发起平台抓取任务并建立消息队列 | 列表开始滚动更新   | 提示“鉴权失败/房间不存在” | 首次拉取 <= 3s      |
-| 直播接入   | 停止获取             | 按钮     | 拉取任务运行中         | 停止抓取与入队                 | 状态变“已停止”     | 提示“当前无运行任务”      | 停止指令 <= 1s 生效 |
-| 直播接入   | 消息提醒             | 开关按钮 | 无                     | 打开/关闭高优消息提示音        | 图标亮灭切换       | 设备异常提示              | 切换成功率 >= 99%   |
-| AI语音面板 | 试听                 | 按钮     | 已选择助播模型         | 合成测试句并本地播放           | 播放成功提示       | 提示“模型不可用”          | 首音 <= 1.5s        |
-| AI语音面板 | AI语音运行中（待机） | 状态按钮 | 会话已初始化           | 进入待机/运行切换              | 显示运行态指示     | 提示初始化未完成          | 状态切换 <= 500ms   |
-| AI语音面板 | 停止AI语音           | 按钮     | TTS 正在输出           | 立即中断播放队列               | 播放停止且队列冻结 | 提示中断失败              | 中断生效 <= 200ms   |
-| AI语音面板 | 暂停                 | 按钮     | 运行中                 | 暂停改写与播报调度             | 状态“暂停中”       | 提示状态冲突              | 暂停生效 <= 500ms   |
-| AI语音面板 | 停止                 | 按钮     | 运行中或暂停中         | 全链路停止并清理运行态资源     | 状态“已停止”       | 提示停止失败              | 资源释放 <= 2s      |
-| AI语音面板 | 开启音画同步         | 开关按钮 | 数字人服务可用         | 切换音画同步策略               | 指示灯与日志一致   | 提示“数字人未就绪”        | 口型偏差 <= 120ms   |
-| AI语音面板 | 模型轮换             | 按钮     | 至少配置2个模型        | 切换到下一模型并热加载         | 新模型生效提示     | 回退到上个模型            | 热切换 <= 3s        |
-| 插播区     | 插播                 | 按钮     | 文本非空               | 将文本插入高优队列             | 列表出现插播任务   | 提示文本为空              | 入队成功率 >= 99%   |
-| 插播区     | 发送文字             | 按钮     | 文本非空               | 直接投递文本给播报链路         | 立即开始播报或排队 | 提示链路不可用            | 首播报 <= 2s        |
-| 账号区     | 关闭                 | 按钮     | 账号已选               | 关闭当前账号消息接入           | 状态置灰           | 提示无活动账号            | 切断 <= 1s          |
-| 账号区     | 初始化消息           | 按钮     | 账号已选               | 拉取初始上下文并清空旧缓存     | 表格状态更新       | 提示初始化失败            | 初始化 <= 3s        |
-| 话术区     | 刷新                 | 按钮     | 无                     | 重载话术文件列表               | 下拉列表更新       | 提示读取失败              | 刷新 <= 1s          |
-| 话术区     | 清理改写             | 按钮     | 存在改写缓存           | 清空改写结果缓存               | 改写列清空         | 提示清理失败              | 清理 <= 1s          |
-
-### 页面 2：数字人（P0）
-
-| 区域   | 按钮/控件            | 类型   | 前置条件           | 触发行为                 | 成功反馈         | 失败反馈         | 验收指标       |
-| ------ | -------------------- | ------ | ------------------ | ------------------------ | ---------------- | ---------------- | -------------- |
-| 资产区 | 选择视频素材         | 按钮   | 文件可读           | 打开文件选择器并校验格式 | 显示文件名       | 提示格式不支持   | 导入 <= 2s     |
-| 引擎区 | 引擎下拉（heygem等） | 下拉   | 已加载至少1引擎    | 切换推理引擎配置         | 当前引擎标识更新 | 自动回退默认引擎 | 切换 <= 1s     |
-| 采集区 | 摄像头模式           | 复选框 | 摄像头设备可用     | 启用摄像头驱动动作       | 模式激活提示     | 提示设备占用     | 激活 <= 2s     |
-| 音频区 | 刷新音频设备         | 按钮   | 无                 | 重扫扬声器和麦克风列表   | 设备列表更新     | 提示扫描失败     | 刷新 <= 1s     |
-| 控制区 | 显示播放窗口         | 按钮   | 数字人已初始化     | 打开预览渲染窗口         | 预览窗口显示     | 提示初始化未完成 | 窗口打开 <= 1s |
-| 控制区 | 开启                 | 按钮   | 素材与音频源已就绪 | 启动数字人推理与渲染会话 | 状态“运行中”     | 提示依赖缺失     | 首帧 <= 500ms  |
-| 控制区 | 停止                 | 按钮   | 运行中             | 停止渲染与音频消费       | 状态“已停止”     | 提示停止失败     | 完整停止 <= 1s |
-
-### 页面 3：设置（P0）
-
-| 区域     | 按钮/控件        | 类型 | 前置条件              | 触发行为                    | 成功反馈       | 失败反馈              | 验收指标       |
-| -------- | ---------------- | ---- | --------------------- | --------------------------- | -------------- | --------------------- | -------------- |
-| 改写平台 | 保存             | 按钮 | APIKey/模型ID校验通过 | 持久化改写平台配置          | 提示“保存成功” | 高亮无效字段          | 保存 <= 500ms  |
-| 引擎区   | 引擎轮换         | 按钮 | 已配置多引擎          | 切换当前语音引擎            | 当前引擎名变化 | 自动回退上个引擎      | 切换 <= 2s     |
-| 引擎区   | 启动API          | 按钮 | 地址与密钥合法        | 拉起本地代理服务/连通性检查 | 状态“连接成功” | 提示端口占用/鉴权失败 | 健康检查 <= 3s |
-| 引擎区   | 云端元素停止     | 按钮 | 服务运行中            | 停止当前云端会话            | 状态“已停止”   | 提示停止失败          | 停止 <= 1s     |
-| 音色区   | 恢复默认值       | 按钮 | 参数已被修改          | 回滚到模板参数              | 参数恢复并提示 | 提示回滚失败          | 回滚 <= 300ms  |
-| 输出区   | 刷新             | 按钮 | 无                    | 重扫音频输出设备            | 下拉刷新成功   | 提示设备读取失败      | 刷新 <= 1s     |
-| 文本区   | 保存（改写要求） | 按钮 | 文本长度在范围内      | 保存改写规则模板            | 保存成功提示   | 提示超长或敏感词      | 保存 <= 500ms  |
-
-### 页面 4-10：其余导航模块（首版按钮级最小集，待你补图后二次细化）
-
-| 页面     | P0按钮最小集                                     | 触发结果                   |
-| -------- | ------------------------------------------------ | -------------------------- |
-| 话术管理 | 新建、导入、导出、启用、禁用、删除、搜索         | 维护可播报话术库与标签     |
-| AI回复   | 新建策略、保存策略、策略测试、发布策略、回滚策略 | 控制改写与回复质量         |
-| 写话术   | 生成、改写、敏感词检测、保存草稿、发布           | 快速生成可播文案           |
-| 模型管理 | 导入模型、校验模型、启用模型、回滚模型、删除模型 | 管理推理与语音模型生命周期 |
-| OBS去重  | 连接OBS、开始去重、停止去重、阈值应用、预览差异  | 降低重复话术和画面重复     |
-| 直播账号 | 新增账号、授权登录、启用、停用、连通性测试、删除 | 管理平台账号接入           |
-| 音转文字 | 开始监听、暂停监听、停止监听、纠错提交、导出文本 | 提供实时字幕与文本源       |
-
-## 多套技术方案（供你选择）
-
-### 方案 A：本地单机主控（推荐先落地）
-
-- 架构：Electron 前端 + Node 主控进程 + Python 推理进程（HTTP 本地回环）+ 本地 SQLite 配置库。
-- 优点：实现最快、调试成本低、适配你当前“1路稳定优先”的目标。
-- 缺点：模块边界中等，后续扩到多会话需要重构部分调度。
-- 适配性：与当前约束最匹配，RTX 3060 即可起步。
-- 预估风险：Python 进程异常退出需要完善守护策略。
-
-### 方案 B：本地服务化分层（中期扩展型）
-
-- 架构：Electron 前端 + Node 编排层 + 多 Python 服务（ASR/TTS/推理分服务）+ gRPC 通信 + Redis 队列。
-- 优点：边界清晰、可观测性好、未来扩 2-3 路会话更平滑。
-- 缺点：实现复杂度明显上升，MVP 周期拉长。
-- 适配性：适合你后续计划做并发和高可用时升级。
-- 预估风险：单机场景下运维负担相对偏高。
-
-### 方案 C：高性能推理核（长期性能型）
-
-- 架构：Electron 前端 + Node 控制面 + C++/Rust 媒体转发核 + ONNX/TensorRT 推理适配层。
-- 优点：时延和吞吐上限最高，适合强实时和后续多路扩展。
-- 缺点：研发门槛高、交付节奏慢、工程复杂度最高。
-- 适配性：不建议作为首版主路线，可作为 2.0 演进目标。
-- 预估风险：跨平台兼容与驱动适配工作量大。
-
-### 推荐决策
-
-1. MVP 采用方案 A，确保 4-6 周形成可演示闭环。
-2. 在方案 A 内预埋接口标准（ASR/TTS/推理/推流插件化），为方案 B 升级做准备。
-3. 当单路稳定后，再按业务增长切到方案 B 的分层部署。
-
-## 决策更新（本轮已确认）
-
-1. MVP 主路线：方案 A（本地单机主控）。
-2. AI直播回复策略默认值：先沿用截图值。
-3. 埋点附录：需要。
-4. 缺失页面细化策略：先按行业标准补全，后续再按截图修正。
-
-### 本轮补充决策（V3.1）
-
-- 虚拟摄像头：P1（Beta阶段上线）
-- OBS去重：保持 P1
-- 默认推理引擎：Wav2Lip
-- 回复策略执行：半自动（高风险内容需人工确认）
-
-### 本轮补充决策（V3.2）
-
-- 高风险强制人工确认触发：命中敏感词词典
-- 改写后文本最大长度：120字
-- 账号连通性自动检测频率：60秒
-- 本地日志默认保留：30天
-
-## V3 增量：页面 4-10 按钮级细化（行业标准基线版）
-
-### 页面 4：话术管理（P0）
-
-| 区域   | 按钮/控件 | 前置条件           | 触发行为                  | 成功反馈     | 失败反馈           | 验收指标          |
-| ------ | --------- | ------------------ | ------------------------- | ------------ | ------------------ | ----------------- |
-| 文件区 | 导入      | 文件存在且编码合法 | 解析 CSV/XLSX/JSON 并入库 | 新增数量提示 | 行级错误报告可下载 | 1万条导入 <= 10s  |
-| 文件区 | 导出      | 至少有1条记录      | 按筛选条件导出            | 文件生成提示 | 提示无数据可导     | 导出 <= 3s        |
-| 编辑区 | 新建      | 标题非空           | 创建草稿话术              | 列表新增草稿 | 字段校验提示       | 保存 <= 500ms     |
-| 编辑区 | 保存      | 内容校验通过       | 覆盖更新当前话术          | 状态“已保存” | 冲突提示并可重试   | 保存成功率 >= 99% |
-| 运营区 | 启用      | 选中记录           | 切换状态为启用            | 标签变绿色   | 提示无效状态       | 状态切换 <= 300ms |
-| 运营区 | 禁用      | 选中记录           | 切换状态为禁用            | 标签变灰色   | 提示无效状态       | 状态切换 <= 300ms |
-| 运营区 | 删除      | 选中记录           | 软删除并记录审计          | 列表移除     | 二次确认取消       | 删除 <= 300ms     |
-
-### 页面 5：AI回复（P0）
-
-| 区域   | 按钮/控件 | 前置条件     | 触发行为          | 成功反馈               | 失败反馈         | 验收指标       |
-| ------ | --------- | ------------ | ----------------- | ---------------------- | ---------------- | -------------- |
-| 策略区 | 新建策略  | 无           | 创建空白策略模板  | 编辑区打开             | 创建失败提示     | 创建 <= 300ms  |
-| 策略区 | 保存策略  | 必填字段完整 | 保存策略与版本号  | 版本号递增             | 校验失败高亮     | 保存 <= 500ms  |
-| 测试区 | 策略测试  | 输入样本存在 | 调用 LLM 模拟回复 | 显示回复样本           | 请求超时提示     | 单次测试 <= 2s |
-| 发布区 | 发布策略  | 测试通过     | 切换线上生效版本  | 显示“生效中”到“已生效” | 自动回滚到旧版本 | 生效 <= 3s     |
-| 发布区 | 回滚策略  | 有历史版本   | 切回指定版本      | 生效版本回退           | 回滚失败提示     | 回滚 <= 2s     |
-
-### 页面 6：写话术（P0）
-
-| 区域   | 按钮/控件    | 前置条件       | 触发行为               | 成功反馈         | 失败反馈     | 验收指标       |
-| ------ | ------------ | -------------- | ---------------------- | ---------------- | ------------ | -------------- |
-| 生成区 | 生成         | 选择场景与风格 | 生成候选文案           | 列表返回候选结果 | 生成失败提示 | 首批结果 <= 3s |
-| 改写区 | 改写         | 选中文案       | 执行改写约束           | 展示改写对比     | 提示改写失败 | 改写 <= 2s     |
-| 安全区 | 敏感词检测   | 文案非空       | 扫描敏感词并标注位置   | 高亮命中词       | 检测失败提示 | 检测 <= 1s     |
-| 保存区 | 保存草稿     | 文案非空       | 保存到草稿库           | 状态“草稿已存”   | 保存失败提示 | 保存 <= 500ms  |
-| 发布区 | 发布到话术库 | 草稿已保存     | 写入话术管理库并打标签 | 发布成功提示     | 冲突提示     | 发布 <= 1s     |
-
-### 页面 7：模型管理（P0）
-
-| 区域   | 按钮/控件 | 前置条件       | 触发行为                 | 成功反馈     | 失败反馈             | 验收指标               |
-| ------ | --------- | -------------- | ------------------------ | ------------ | -------------------- | ---------------------- |
-| 导入区 | 导入模型  | 文件存在       | 写入模型仓库并登记元数据 | 列表新增模型 | 提示格式不支持       | 导入 <= 5s（不含拷贝） |
-| 校验区 | 校验模型  | 模型已导入     | 校验权重、配置、依赖     | 显示校验通过 | 输出校验报告         | 校验 <= 8s             |
-| 启用区 | 启用模型  | 校验通过       | 设为当前生效模型         | 生效标识切换 | 自动回滚旧模型       | 切换 <= 3s             |
-| 版本区 | 回滚模型  | 存在历史版本   | 切回指定版本             | 当前版本更新 | 回滚失败提示         | 回滚 <= 3s             |
-| 运维区 | 删除模型  | 非当前生效模型 | 删除模型文件与登记项     | 列表移除     | 提示“正在使用不可删” | 删除 <= 2s             |
-
-### 页面 8：OBS去重（P1，可先预埋）
-
-| 区域   | 按钮/控件 | 前置条件       | 触发行为              | 成功反馈     | 失败反馈         | 验收指标      |
-| ------ | --------- | -------------- | --------------------- | ------------ | ---------------- | ------------- |
-| 连接区 | 连接OBS   | 地址与密钥有效 | 建立 WebSocket 会话   | 状态“已连接” | 鉴权失败提示     | 连接 <= 2s    |
-| 去重区 | 开始去重  | OBS 已连接     | 启用文本/片段去重策略 | 规则状态开启 | 提示策略冲突     | 开启 <= 1s    |
-| 去重区 | 停止去重  | 去重运行中     | 关闭去重策略          | 状态关闭     | 提示无运行任务   | 停止 <= 1s    |
-| 参数区 | 阈值应用  | 阈值合法       | 保存并立即生效        | 参数生效提示 | 范围校验提示     | 生效 <= 500ms |
-| 预览区 | 预览差异  | 有样本文本     | 显示去重前后对比      | 差异高亮     | 提示无可对比样本 | 渲染 <= 500ms |
-
-### 页面 9：直播账号（P0）
-
-| 区域   | 按钮/控件  | 前置条件       | 触发行为         | 成功反馈       | 失败反馈             | 验收指标      |
-| ------ | ---------- | -------------- | ---------------- | -------------- | -------------------- | ------------- |
-| 账号区 | 新增账号   | 平台已选       | 创建账号草稿记录 | 列表新增草稿   | 创建失败提示         | 创建 <= 300ms |
-| 授权区 | 授权登录   | 网络可用       | 拉起授权流程     | 返回授权成功   | 授权超时提示         | 完成 <= 60s   |
-| 状态区 | 启用       | 账号可用       | 设为当前活跃账号 | 状态变启用     | 提示账号失效         | 切换 <= 500ms |
-| 状态区 | 停用       | 当前账号启用中 | 关闭账号接入     | 状态变停用     | 提示无活动账号       | 切换 <= 500ms |
-| 健康区 | 连通性测试 | 账号已授权     | 发起健康检查     | 显示延迟与结果 | 提示平台限流         | 测试 <= 2s    |
-| 运维区 | 删除       | 非当前活跃账号 | 移除账号与凭据   | 列表移除       | 提示“活跃账号不可删” | 删除 <= 500ms |
-
-### 页面 10：音转文字（P0）
-
-| 区域   | 按钮/控件 | 前置条件       | 触发行为          | 成功反馈     | 失败反馈         | 验收指标        |
-| ------ | --------- | -------------- | ----------------- | ------------ | ---------------- | --------------- |
-| 采集区 | 开始监听  | 音频设备可用   | 启动 ASR 流式识别 | 状态“监听中” | 设备占用提示     | 首字幕 <= 800ms |
-| 采集区 | 暂停监听  | 监听中         | 暂停识别流        | 状态“已暂停” | 状态冲突提示     | 暂停 <= 300ms   |
-| 采集区 | 停止监听  | 监听中或暂停中 | 停止识别并关闭流  | 状态“已停止” | 停止失败提示     | 停止 <= 500ms   |
-| 纠错区 | 纠错提交  | 有文本变更     | 保存人工修正文本  | 版本更新提示 | 冲突提示         | 提交 <= 500ms   |
-| 导出区 | 导出文本  | 存在文本记录   | 导出 txt/srt      | 下载成功提示 | 提示无可导出内容 | 导出 <= 2s      |
-
-## 按钮级埋点字典附录（V1）
-
-| 字段       | 类型   | 说明                   | 示例                 |
-| ---------- | ------ | ---------------------- | -------------------- |
-| event_name | string | 固定为 ui_button_click | ui_button_click      |
-| page_id    | string | 页面标识               | live_console         |
-| button_id  | string | 按钮唯一ID             | btn_live_start_fetch |
-| session_id | string | 会话ID                 | sess_20260427_xxx    |
-| account_id | string | 账号ID（可空）         | douyin_001           |
-| model_id   | string | 当前模型ID（可空）     | wav2lip_main         |
-| request_id | string | 本次请求链路ID         | req_xxx              |
-| click_ts   | number | 点击时间戳             | 1777250000000        |
-| result     | string | success/fail/cancel    | success              |
-| error_code | string | 错误码（可空）         | LIVE_AUTH_401        |
-| latency_ms | number | 按钮动作耗时           | 842                  |
-| extra      | json   | 业务附加信息           | {"queue_len":12}     |
+Electron + Vue 3 + TypeScript 桌面应用，用于 AI 驱动的数字人直播。连接抖音直播间，转发弹幕，通过 TTS + Wav2Lip 引擎驱动数字人，并包含运营工具（话术管理、AI 回复策略、ASR、模型/账号管理）。
 
-## 下一轮迭代目标（V4）
-
-1. 将 10 个页面补齐“字段级校验规则清单”（长度、格式、取值范围、默认值、联动逻辑）。
-2. 为每个关键按钮增加“状态机迁移文本定义”（idle/running/paused/stopped/error）。
-3. 输出“端到端异常剧本”20 条，覆盖断网、限流、GPU不足、设备丢失、模型切换失败。
+**技术栈：** Electron (Node) + Vue 3 + Python (LiveTalking) + SQLite + FFmpeg
+**首发平台：** 抖音 | **并发：** 单机 1 路 | **最低 GPU：** RTX 3060
 
-## V3.3 自主收敛决策（无阻塞默认值）
+### 1.1 运行模式
 
-1. 敏感词词典来源：采用“双轨”机制。
-
-- 内置基础词典（随版本更新）。
-- 支持用户上传业务词典（CSV/UTF-8），按租户/账号隔离。
-- 命中策略：内置与用户词典并集命中即判定高风险。
+| 模式 | 用途 | 数字人能力 |
+|------|------|-----------|
+| `dev-mock` | 前期开发/联调 | 内存 mock，无外部依赖 |
+| `dev-cpu` | 中期联调 | 本地 LiveTalking 推理（Wav2Lip/MuseTalk） |
+| `prod-cloud-gpu` | 上线验收 | 远端 GPU 推理 |
 
-2. 半自动模式人工确认超时策略：转入“待审队列”，不自动发送。
+---
 
-- 默认人工确认超时：20 秒。
-- 超时动作：状态置为 pending_review_timeout。
-- 运营可在待审区执行“继续发送/丢弃/二次改写”。
-
-3. 直播消息队列上限：1000 条（单会话）。
-
-- 达到 80% 触发预警；达到 100% 启用丢弃策略。
-- 丢弃策略：优先丢弃低优先级旧消息（FIFO within low-priority）。
-- 高优先级消息（插播/人工发送）保留，不被低优先级挤压。
+## 2. 架构总览
 
-4. 队列指标补充（纳入可观测性）。
+```
+Renderer (Vue 3)          Pinia Store → apiClient
+    ↕ IPC (preload bridge)
+Electron Main (Node)
+    ├── SQLite DB         数据持久化（scripts/policies/models/accounts）
+    ├── LLM Client        改写/生成/风控（云 API）  ← 2026-05-08 新增
+    ├── LiveTalking Mgr   子进程生命周期管理        ← 2026-05-08 新增
+    │       ↕ HTTP localhost:8010
+    └── LiveTalking (Python)
+            ├── POST /human      TTS + 播报
+            ├── POST /offer      WebRTC SDP 协商
+            └── POST /is_speaking 状态查询
+```
 
-- queue_usage_ratio、queue_drop_count、queue_high_priority_backlog。
-- 验收门槛：连续 30 分钟运行，queue_drop_count/total_in <= 1%。
+### 2.1 路由策略（dev-cpu 模式）
 
-## V4 起草完成项（增量）
+| 路径类别 | 路由目标 | 说明 |
+|---------|---------|------|
+| session/live/queue/tts/avatar/stream | → LiveTalking HTTP API | `runtime/adapters/livetalking.ts` |
+| scripts/policies/writer/models/accounts/asr | → IPC → Main SQLite | 通过 `trySqliteBackedApi` 从 mock/handlers 复用 |
+| moderation/rewrite | → LiveTalking 适配器（内置词库） | 待接入云 LLM API |
 
-1. 字段级校验新增基线。
+### 2.2 关键文件
 
-- APIKey：长度 20-128，允许字母数字和 -\_，前后空格自动裁剪。
-- 模型ID：长度 3-64，必须匹配 ^[a-zA-Z0-9._-]+$。
-- 直播间ID：长度 6-20，仅数字。
-- 改写要求文本：最大 120 字，禁止全空白提交。
+| 文件 | 职责 |
+|------|------|
+| `electron/main/index.ts` | 应用入口、窗口创建、IPC 注册、LiveTalking 启动 |
+| `electron/main/livetalking-process.ts` | LiveTalking 子进程管理（启动/健康检查/停止） |
+| `electron/main/mock-api-db.ts` | SQLite 持久化层 |
+| `src/shared/api/client.ts` | API 客户端，三模式路由分发 |
+| `src/shared/api/llm-client.ts` | LLM 云 API 客户端 |
+| `runtime/mock/handlers.ts` | dev-mock 全链路模拟 + SQLite 桥接 |
+| `runtime/adapters/livetalking.ts` | LiveTalking HTTP 适配器 + WebRTC 流捕获 |
 
-2. 关键状态机文本基线（按钮通用）。
+---
 
-- idle -> running：启动类按钮成功。
-- running -> paused：暂停按钮成功。
-- paused -> running：继续按钮成功。
-- running/paused -> stopped：停止按钮成功。
-- any -> error：调用超时、鉴权失败、设备丢失、依赖服务不可用。
-- error -> idle：重试成功或人工复位。
+## 3. 里程碑状态
 
-### 版本归一说明
+### M0 — 架构冻结 ✅ 100%
 
-- V5 为当前唯一执行基线（用于评审与落地）。
-- V4.1-V4.6 作为历史草案保留，仅供对照，不再作为实施依据。
+- [x] Action 常量字典（`src/shared/types/actions.ts`）
+- [x] API 路径与类型（`src/shared/types/api.ts`）
+- [x] 错误码枚举与消息映射
+- [x] 三模式运行配置（`src/shared/config/runtimeMode.ts`）
 
-- 仓库输出文件：/memories/repo/digital-avatar-plan-v5.md
+### M1 — 主链路打通 ✅ 90%（mock 完成，真实链路待 GPU 验证）
 
-## V5 技术架构与实现方案（可落地版）
+- [x] dev-mock：直播消息 → 改写 → 风控 → TTS → 播报
+- [x] LiveTalking 适配器 HTTP 联调（`runtime/adapters/livetalking.ts`）
+- [x] WebRTC SDP 协商 + 远程流捕获
+- [ ] GPU 环境性能验证（口型首帧 ≤ 500ms，finalfps ≥ 25）
 
-### 本轮新增约束（已确认）
+### M2 — 核心页面闭环 ✅ 95%
 
-1. Node 主控与 Python 推理通信：HTTP/REST。
-2. 本地数据存储：SQLite。
-3. 云边边界：LLM/TTS 走云端，唇形推理走本地 GPU。
-4. 媒体底座：FFmpeg + WebRTC/RTMP。
+- [x] AI直播页（LivePage.vue）
+- [x] 数字人页（AvatarPage.vue）含 WebRTC 视频预览
+- [x] 设置页（SettingsPage.vue）
+- [x] Dycast 代理页（DycastDelegatePage.vue）
 
-### 1) 技术架构（四层九模块）
+### M3 — 运营页面闭环 ✅ 95%
 
-A. 桌面交互层（Electron）
+- [x] 话术管理（ScriptPage.vue）CRUD
+- [x] AI回复策略（PolicyPage.vue）
+- [x] 写话术（WriterPage.vue）
+- [x] 模型管理（ModelPage.vue）
+- [x] 直播账号（AccountPage.vue）
+- [x] 音转文字（AsrPage.vue）
 
-- 模块 A1：页面渲染与状态展示（10 个页面）。
-- 模块 A2：本地权限与设备管理（麦克风、扬声器、屏幕回采）。
-- 模块 A3：按钮动作总线（统一分发到主控层）。
+### M4 — 真实后端联调 ✅ 代码完成，待 GPU 环境实测
 
-B. 主控编排层（Node Main）
+- [x] dev-cpu M3 数据路径路由到 IPC SQLite（`trySqliteBackedApi`）
+- [x] LiveTalking 适配器增强（fetch 超时、敏感词检测）
+- [x] LiveTalking 进程生命周期管理（`livetalking-process.ts`）
+- [x] LLM 客户端（`llm-client.ts`，含 mock fallback）
+- [ ] GPU 环境端到端验证
+- [ ] 8 小时稳定性测试
 
-- 模块 B1：会话编排器（session 生命周期、状态机、幂等）。
-- 模块 B2：策略引擎（半自动策略、敏感词审核、队列优先级）。
-- 模块 B3：插件网关（LLM/TTS/推理/推流适配器统一接口）。
+### M5 — Beta 增强 ⏳ 未开始
 
-C. 推理与媒体层（Python + FFmpeg）
+- [ ] 虚拟摄像头
+- [ ] OBS 去重
 
-- 模块 C1：推理服务（Wav2Lip 默认，后续可扩 MuseTalk）。
-- 模块 C2：音频处理服务（桌面音频回采、切片、缓冲、对齐）。
-- 模块 C3：媒体输出服务（WebRTC 预览、RTMP 推流，虚拟摄像头 P1）。
+---
 
-D. 数据与可观测层（SQLite + Logs + Metrics）
+## 4. 已完成任务（2026-05-08）
 
-- 模块 D1：配置与模板库（账号、平台、策略、模型映射）。
-- 模块 D2：运行时指标（时延、fps、队列、失败率、GPU 占用）。
-- 模块 D3：审计日志（按钮级操作、错误码、恢复动作）。
+### 4.1 dev-cpu 模式路由修复
 
-### 2) 技术实现方案（多套可选）
+`isCpu` 分支改为双路由策略：先尝试 `trySqliteBackedApi`（IPC → SQLite），命中 M3 数据路径则返回；未命中则转发到 `liveTalkingCall`（LiveTalking HTTP）。
 
-#### 方案 A-Base（MVP 推荐）
+**文件：** `src/shared/api/client.ts:44-51` `runtime/mock/handlers.ts:929-930`
 
-- 形态：单机单进程主控 + 单推理进程。
-- 通信：Node -> Python 采用本地 HTTP。
-- 存储：SQLite + 本地文件缓存。
-- 优点：实现快，调试成本低，适合 1 路稳定目标。
-- 缺点：扩展到多会话时需拆分编排器。
-- 适配结论：与你当前约束完全一致，优先落地。
+### 4.2 LiveTalking 适配器增强
 
-#### 方案 A-Plus（Beta 升级）
+- `fetchWithTimeout(url, options, 5000ms)` — 统一超时包装
+- `MODERATION_CHECK` — 内置敏感词检测（`['违禁', '敏感词']`）
+- `SCRIPT_REWRITE` — 空文本校验 + `[改写]` 标注
+- WebRTC `getRemoteStreamPromise()` — 远程流捕获
 
-- 在 A-Base 基础上增加：
-- 独立媒体输出进程（避免推理与编码互相抢资源）。
-- 统一健康检查守护（主控拉起失败子进程）。
-- 优点：稳定性提升，故障隔离更好。
-- 缺点：排障链路变长。
-- 适配结论：Beta 推荐开启。
+**文件：** `runtime/adapters/livetalking.ts`
 
-#### 方案 B-Lite（并发预研）
+### 4.3 LiveTalking 进程管理
 
-- 在 A-Plus 基础上增加：
-- 编排器内部多会话调度池。
-- 可选 Redis 队列（单机）。
-- 优点：为 2-3 路并发做准备。
-- 缺点：超出当前 MVP 范围。
-- 适配结论：仅预研，不纳入首发。
+`electron/main/livetalking-process.ts` — 子进程生命周期：
+- `startLiveTalking()` — spawn Python + 健康检查轮询（500ms × 30 = 15s 超时）
+- `stopLiveTalking()` — SIGTERM → 5s → SIGKILL
+- `app.whenReady()` 中按 `dev-cpu` 模式自动启动
 
-### 3) 技术路径（避免发散的里程碑）
+**文件：** `electron/main/livetalking-process.ts` `electron/main/index.ts:104-109` `package.json`
 
-M0 架构冻结（1 周）
+### 4.4 LLM 客户端
 
-- 产物：接口清单、状态机定义、错误码字典。
-- 退出条件：所有 P0 按钮都有唯一 action_id 与回执规则。
+`src/shared/api/llm-client.ts`：
+- `llmRewrite(text, style?)` — 话术改写（OpenAI 兼容 API + mock fallback）
+- `llmGenerateReply(text, config?)` — AI 回复生成
+- `localSensitiveCheck(text)` — 本地敏感词检测
 
-M1 主链路打通（1-2 周）
+**文件：** `src/shared/api/llm-client.ts`
 
-- 产物：抖音消息接入 -> 改写 -> TTS -> 数字人输出。
-- 退出条件：端到端首帧 <= 500ms，连续 30 分钟可运行。
+---
 
-M2 页面闭环（1 周）
+## 5. 下一步任务（优先级排序）
 
-- 产物：AI直播、数字人、设置三页 P0 按钮全部可操作。
-- 退出条件：按钮成功率 >= 99%，关键错误可恢复。
+### 5.1 P0 — GPU 环境端到端验证
 
-M3 运营能力闭环（1 周）
+```bash
+# 终端 1: LiveTalking
+cd /path/to/livetalking && python app.py
 
-- 产物：话术管理、AI回复、写话术、直播账号、音转文字。
-- 退出条件：半自动审核链路可闭环，超时转待审生效。
+# 终端 2: Electron
+cd digital_avatar && npm run dev
+```
 
-M4 稳定性与可观测（1 周）
+验证清单：
+1. 会话启动 → `POST /api/v1/session/start` 返回 running
+2. 文字播报 → `POST /api/v1/queue/enqueue` → LiveTalking `/human` 被调用
+3. 数字人启动 → WebRTC SDP Offer → 预览窗口显示视频
+4. 话术管理 → CRUD 数据持久化（刷新后存在）
+5. 风控检测 → 含「违禁」文本返回 `risk_level: 'high'`
+6. 关闭 LiveTalking → 提示 "LiveTalking unreachable"
 
-- 产物：日志、埋点、指标看板与自动告警。
-- 退出条件：8 小时稳定运行，恢复成功率 >= 99%。
+### 5.2 P0 — 稳定性验收（M4）
 
-M5 Beta 增强（可选）
+- 8 小时连续运行，自动恢复成功率 ≥ 99%
+- 指标采集：队列深度、GPU 利用率、错误率、端到端时延
+- 异常场景：LiveTalking 崩溃重启、网络断开重连、队列满载
 
-- 产物：虚拟摄像头、OBS 去重。
-- 退出条件：不影响 P0 时延指标。
+### 5.3 P1 — LLM 真实接入
 
-### 4) 调用接口设计（V1）
+将 `livetalking.ts` 的 `SCRIPT_REWRITE` 和 `MODERATION_CHECK` 从本地 stub 改为调用 `llm-client.ts` 的云 API。
 
-#### 4.1 Electron 到 Node 主控（IPC 语义）
+### 5.4 P1 — Beta 功能（M5）
 
-1. session.start
+- 虚拟摄像头输出
+- OBS 去重
 
-- 入参：platform, room_id, account_id, model_profile_id
-- 出参：session_id, state
-- 超时：3000ms
-- 幂等键：session_id + action_id
+---
 
-2. session.pause / session.resume / session.stop
+## 6. 文档体系
 
-- 入参：session_id
-- 出参：state
-- 超时：1000ms
+本文档是唯一执行规划基线。以下文档为专项参考：
 
-3. script.insert_high_priority
+| 文档 | 用途 |
+|------|------|
+| [requirements-spec-v7.md](requirements-spec-v7.md) | 按钮级需求定义、验收标准 |
+| [technical-design-v7.md](technical-design-v7.md) | 架构、接口、里程碑详细设计 |
+| [button-action-api-map-v1.md](button-action-api-map-v1.md) | 按钮→Action→API 映射表 |
 
-- 入参：session_id, text, source=manual
-- 出参：queue_position
-- 超时：500ms
+### 弃用文档
 
-4. config.save
+以下文档内容已合并到本文件，不再维护：
 
-- 入参：scope, payload, version
-- 出参：saved_version
-- 超时：500ms
+- ~~plan-v6.md~~ — 内容合并至本文档 §3-§4
+- ~~vibecoding-plan-v1.md~~ — AI 执行指导（Phase 0-5 已完成）
+- ~~plan-real-backend-integration.md~~ — 真实后端联调计划（已执行完毕）
+- ~~development-doc-index-v7.md~~ — 文档索引（由本文档替代）
 
-#### 4.2 Node 到 Python 推理服务（HTTP）
+---
 
-1. GET /health
+## 7. 后端 API ↔ 前端页面映射（完成情况检查）
 
-- 用途：探活
-- 成功条件：http 200 且 status=ok
+> 检查日期：2026-05-08。后端 API 定义在 `src/shared/types/api.ts`（`ApiPaths`），Mock 实现在 `runtime/mock/handlers.ts`，前端页面在 `src/features/*/`。
 
-2. POST /session/init
+### 7.1 Core API（会话/直播/队列/审核）
 
-- 入参：session_id, avatar_asset, engine=wav2lip
-- 出参：ready=true/false, warmup_ms
+| # | API Path | 后端 Mock | 前端页面 | 前端函数 | 完成 |
+|---|----------|-----------|---------|---------|------|
+| 1 | `POST /api/v1/session/start` | ✅ handlers.ts:219 | LivePage.vue / SettingsPage.vue | `onRuntimeToggle`, `onModelRotate`, `onEngineRotate` | ✅ |
+| 2 | `POST /api/v1/session/stop` | ✅ handlers.ts:231 | LivePage.vue | `onTtsStop`, `onStop` | ✅ |
+| 3 | `GET /api/v1/session/status` | ✅ handlers.ts:243 | LivePage.vue | `onInitMessages` via `sessionStore.fetchStatus()` | ✅ |
+| 4 | `POST /api/v1/live/connect` | ✅ handlers.ts:252 | LivePage.vue | `onFetchStart` via `liveStore.connect()` | ✅ |
+| 5 | `POST /api/v1/live/disconnect` | ✅ handlers.ts:269 | LivePage.vue | `onFetchStop`, `onAccountClose` | ✅ |
+| 6 | `POST /api/v1/queue/enqueue` | ✅ handlers.ts:280 | LivePage.vue | 自动入队 (`liveStore.autoQueue`) | ✅ |
+| 7 | `POST /api/v1/queue/insert` | ✅ handlers.ts:296 | LivePage.vue | `onInsert` | ✅ |
+| 8 | `POST /api/v1/script/rewrite` | ✅ handlers.ts:311 | LivePage.vue | `onSendText` pipeline step 1 | ✅ |
+| 9 | `POST /api/v1/moderation/check` | ✅ handlers.ts:320 | LivePage.vue | `onSendText` pipeline step 2 | ✅ |
+| 10 | `POST /api/v1/review/decision` | ✅ handlers.ts:331 | **无前端调用** | — | ⚠️ 未使用 |
+| 11 | `POST /api/v1/tts/synthesize` | ✅ handlers.ts:341 | LivePage.vue | `onTtsPreview`, `onSendText` step 4 | ✅ |
+| 12 | `POST /api/v1/avatar/start` | ✅ handlers.ts:351 | AvatarPage.vue | `onStart` via `avatarStore.start()` | ✅ |
+| 13 | `POST /api/v1/stream/start` | ✅ handlers.ts:360 | SettingsPage.vue | `onApiStart` | ✅ |
+| 14 | `GET /api/v1/metrics` | ✅ handlers.ts:370 | **无前端调用** | — | ⚠️ 未使用 |
 
-3. POST /audio/push
+### 7.2 M3 话术管理（ScriptPage.vue）
 
-- 入参：session_id, pcm_chunk, ts
-- 出参：accepted=true/false
+| # | API Path | 后端 Mock | 前端实现 | 完成 |
+|---|----------|-----------|---------|------|
+| 15 | `GET /api/v1/scripts` | ✅ handlers.ts:387 | `loadScripts()` → 列表展示 | ✅ |
+| 16 | `POST /api/v1/scripts/create` | ✅ handlers.ts:395 | `onNew()` → 新建表单 | ✅ |
+| 17 | `POST /api/v1/scripts/update` | ✅ handlers.ts:423 | `onSave(id)` → 行内编辑 | ✅ |
+| 18 | `POST /api/v1/scripts/delete` | ✅ handlers.ts:433 | `onDelete()` → 批量选择删除 | ✅ |
+| 19 | `POST /api/v1/scripts/status` | ✅ handlers.ts:449 | `onEnable()`, `onDisable()` → 批量切换 | ✅ |
 
-4. POST /infer/frame
+**所有按钮：** `btn_script_new`, `btn_script_save`, `btn_script_enable`, `btn_script_disable`, `btn_script_delete`, `btn_script_import`, `btn_script_export` — 全部在 ScriptPage.vue 中实现 ✅
 
-- 入参：session_id, audio_features
-- 出参：frame_id, pts
+### 7.3 M3 AI回复策略（PolicyPage.vue）
 
-5. POST /stream/publish
+| # | API Path | 后端 Mock | 前端实现 | 完成 |
+|---|----------|-----------|---------|------|
+| 20 | `GET /api/v1/policies` | ✅ handlers.ts:463 | `loadPolicies()` → 列表 | ✅ |
+| 21 | `POST /api/v1/policies/create` | ✅ handlers.ts:471 | `onNew()` → 新建策略 | ✅ |
+| 22 | `POST /api/v1/policies/save` | ✅ handlers.ts:495 | `onSave()` → 编辑参数（temperature/max_reply_len/risk_mode） | ✅ |
+| 23 | `POST /api/v1/policies/test` | ✅ handlers.ts:510 | `onTest()` → 样本文本测试 | ✅ |
+| 24 | `POST /api/v1/policies/publish` | ✅ handlers.ts:525 | `onPublish()` → 发布为 active | ✅ |
+| 25 | `POST /api/v1/policies/rollback` | ✅ handlers.ts:545 | `onRollback()` → 指定版本回滚 | ✅ |
 
-- 入参：session_id, frame_id, audio_ref, target=webrtc|rtmp
-- 出参：published=true/false
+**所有按钮：** `btn_policy_new`, `btn_policy_save`, `btn_policy_test`, `btn_policy_publish`, `btn_policy_rollback` — 全部在 PolicyPage.vue 中实现 ✅
 
-6. POST /session/teardown
+### 7.4 M3 写话术（WriterPage.vue）
 
-- 入参：session_id
-- 出参：released=true/false
+| # | API Path | 后端 Mock | 前端实现 | 完成 |
+|---|----------|-----------|---------|------|
+| 26 | `POST /api/v1/writer/generate` | ✅ handlers.ts:569 | `onGenerate()` → 场景/风格选择生成候选 | ✅ |
+| 27 | `POST /api/v1/writer/rewrite` | ✅ handlers.ts:587 | `onRewrite()` → 改写选中文案 | ✅ |
+| **28** | **`POST /api/v1/writer/sensitive-check`** | ✅ handlers.ts:596 | **`onSensitiveCheck()` → WriterPage.vue:130-163** | ✅ **已实现！** |
+| 29 | `POST /api/v1/writer/save-draft` | ✅ handlers.ts:606 | `onSaveDraft()` → 保存草稿 | ✅ |
+| 30 | `POST /api/v1/writer/publish` | ✅ handlers.ts:621 | `onPublish()` → 发布到话术库 | ✅ |
 
-### 5) 接口调用伪代码（文本版）
+**所有按钮：** `btn_writer_generate`, `btn_writer_rewrite`, `btn_writer_sensitive_check`, `btn_writer_save_draft`, `btn_writer_publish` — **全部在 WriterPage.vue 中实现** ✅
 
-伪代码 A：启动会话
+> **⚠️ 敏感词说明：** `btn_writer_sensitive_check`（敏感词检测）已经在 WriterPage.vue 中完整实现：
+> - **JS 逻辑**（第 130-163 行）：调用 `/api/v1/writer/sensitive-check`，返回命中词列表 `hit_words`，区分 safe/unsafe
+> - **UI 呈现**（第 322-331 行）："敏感词检测"按钮，第 308-312 行显示命中词红色标签
+> - **Mock 后端**（handlers.ts:596-604）：基于文本中是否含"违禁"关键词做检测
+> - 但系统**缺少独立的敏感词库管理页面**（CRUD 管理敏感词列表），当前敏感词是硬编码在 Mock/LiveTalking 适配器中的
 
-1. 校验平台配置、账号有效性、模型映射。
-2. 生成 session_id 与 action_id。
-3. 调用 /session/init 预热推理。
-4. 若 ready=true，则主控状态从 idle -> running。
-5. 启动消息拉取、音频回采、输出通道。
+### 7.5 M3 模型管理（ModelPage.vue）
 
-伪代码 B：弹幕到播报链路
+| # | API Path | 后端 Mock | 前端实现 | 完成 |
+|---|----------|-----------|---------|------|
+| 31 | `GET /api/v1/models` | ✅ handlers.ts:640 | `loadModels()` → 列表展示 | ✅ |
+| 32 | `POST /api/v1/models/import` | ✅ handlers.ts:648 | `onImportFile()` → 文件选择 + 上传 | ✅ |
+| 33 | `POST /api/v1/models/verify` | ✅ handlers.ts:670 | `onVerify(id)` → 校验按钮 | ✅ |
+| 34 | `POST /api/v1/models/enable` | ✅ handlers.ts:688 | `onEnable(id)` → 启用（自动禁用其他 active） | ✅ |
+| 35 | `POST /api/v1/models/rollback` | ✅ handlers.ts:710 | `onRollback(id)` → 回滚到 validated | ✅ |
+| 36 | `POST /api/v1/models/delete` | ✅ handlers.ts:726 | `onDelete(id)` → 不允许删除 active 模型 | ✅ |
 
-1. 接收弹幕消息并打标签（优先级、风险级别）。
-2. 命中敏感词则进入待审队列。
-3. 非敏感消息进入改写与 TTS。
-4. TTS 音频分片推入 /audio/push。
-5. 推理输出帧后调用 /stream/publish。
-6. 写入审计日志与埋点。
+**所有按钮：** `btn_model_import`, `btn_model_verify`, `btn_model_enable`, `btn_model_rollback`, `btn_model_delete` — 全部在 ModelPage.vue 中实现 ✅
 
-伪代码 C：半自动审核超时
+### 7.6 M3 直播账号（AccountPage.vue）
 
-1. 消息进入待审并开始 20 秒计时。
-2. 若人工确认通过，进入改写与播报。
-3. 若超时未处理，状态置 pending_review_timeout。
-4. 待审页允许继续发送、丢弃或二次改写。
+| # | API Path | 后端 Mock | 前端实现 | 完成 |
+|---|----------|-----------|---------|------|
+| 37 | `GET /api/v1/accounts` | ✅ handlers.ts:752 | `loadAccounts()` → 列表 | ✅ |
+| 38 | `POST /api/v1/accounts/create` | ✅ handlers.ts:760 | `onNew()` → 新建 | ✅ |
+| 39 | `POST /api/v1/accounts/auth` | ✅ handlers.ts:780 | `onAuth(id)` → 授权登录 | ✅ |
+| 40 | `POST /api/v1/accounts/status` | ✅ handlers.ts:797 | `onEnable(id)`, `onDisable(id)` → 启用/停用 | ✅ |
+| 41 | `POST /api/v1/accounts/health` | ✅ handlers.ts:807 | `onHealthTest(id)` → 连通性延迟测试 | ✅ |
+| 42 | `POST /api/v1/accounts/delete` | ✅ handlers.ts:823 | `onDelete(id)` → 不允许删除 enabled 账号 | ✅ |
 
-伪代码 D：故障恢复
+**所有按钮：** `btn_account_new`, `btn_account_auth`, `btn_account_enable`, `btn_account_disable`, `btn_account_health_test`, `btn_account_delete` — 全部在 AccountPage.vue 中实现 ✅
 
-1. 监测到 /health 异常或 fps 低于阈值。
-2. 主控进入 degraded 状态并暂停入队。
-3. 拉起子进程并重建输出通道。
-4. 恢复成功则 degraded -> running；失败则 -> error 并提示人工介入。
+### 7.7 M3 音转文字 ASR（AsrPage.vue）
 
-### 6) 防发散与可实现性检查
+| # | API Path | 后端 Mock | 前端实现 | 完成 |
+|---|----------|-----------|---------|------|
+| 43 | `POST /api/v1/asr/start` | ✅ handlers.ts:849 | `onStart()` → 启动监听 + 模拟输入 | ✅ |
+| 44 | `POST /api/v1/asr/pause` | ✅ handlers.ts:867 | `onPause()` → 暂停识别 | ✅ |
+| 45 | `POST /api/v1/asr/stop` | ✅ handlers.ts:882 | `onStop()` → 停止并清理 | ✅ |
+| 46 | `POST /api/v1/asr/correction` | ✅ handlers.ts:898 | `onCorrectionSubmit()` → 行内纠错提交 | ✅ |
+| 47 | `POST /api/v1/asr/export` | ✅ handlers.ts:909 | `onExport()` → TXT/SRT 格式导出 | ✅ |
 
-1. 已剔除或降级项（避免当前不可实现）
+**所有按钮：** `btn_asr_start`, `btn_asr_pause`, `btn_asr_stop`, `btn_asr_correction_submit`, `btn_asr_export` — 全部在 AsrPage.vue 中实现 ✅
 
-- 多平台首发并行：降级为抖音单平台。
-- 多会话并发：降级为单机 1 路。
-- 虚拟摄像头与 OBS 去重：降为 P1/Beta。
-- 本地训练流程：首版不做，仅导入资产。
+### 7.8 特别页面
 
-2. 实施红线（超出即视为发散）
+| 页面 | 后端 API | 前端实现 | 完成 |
+|------|---------|---------|------|
+| DycastDelegatePage.vue | 无 API 调用，纯 iframe 嵌入 | `dycastUrlInput` + iframe 加载 | ✅ |
+| SettingsPage.vue | 调用 sessionStart/Stop/streamStart | API 服务 + 提供商配置 + 引擎轮换 + Prompt 保存 | ✅ |
 
-- 任何新增功能不得破坏首帧 <= 500ms。
-- 不新增第二数据库或分布式中间件到 MVP。
-- 不引入 C++/Rust 自研媒体核到 MVP。
+### 7.9 未使用 API 汇总
 
-3. 可实现性结论
+| API Path | 问题 | 建议 |
+|----------|------|------|
+| `POST /api/v1/review/decision` | 定义了类型和 mock，但无前端页面调用 | 可在 LivePage 审核弹窗中集成，当 moderation check 为 high risk 时弹出人工审核 |
+| `GET /api/v1/metrics` | 定义了类型和 mock，但无前端页面调用 | 可在 SettingsPage 或 LivePage 添加指标面板 |
 
-- 当前范围在 4-6 周内可交付 Demo 级闭环。
-- 主要风险在外部平台限流、云端 API 抖动、显卡驱动兼容。
-- 已给出可回退路径：降级策略、待审队列、模型回滚、服务重启。
+### 7.10 未实现功能（Actions 已定义但无页面）
 
-### 7) 下一步文档迭代任务
+| Action ID | 所属页面 | 状态 |
+|-----------|---------|------|
+| `btn_obs_connect` | OBS 去重（Page H） | ⏳ M5 未开始 |
+| `btn_obs_start_dedup` | OBS 去重 | ⏳ M5 未开始 |
+| `btn_obs_stop_dedup` | OBS 去重 | ⏳ M5 未开始 |
+| `btn_obs_apply_threshold` | OBS 去重 | ⏳ M5 未开始 |
+| `btn_obs_preview_diff` | OBS 去重 | ⏳ M5 未开始 |
 
-1. 补齐 10 页面字段级校验矩阵（每字段默认值与错误码）。
-2. 输出错误码总表（按模块分组，支持排障检索）。
-3. 增加时序图文字版（启动、播报、恢复三条主链路）。
+### 7.8 敏感词库管理（SensitiveWordsPage.vue）
 
-## V4.1 技术架构（MVP 可落地版，方案A细化）
+| # | API Path | 后端实现 | 前端页面 | 前端函数 | 完成 |
+|---|----------|---------|---------|---------|------|
+| 48 | `GET /api/v1/sensitive-words` | ✅ mock-api-db.ts CRUD | SensitiveWordsPage.vue | `loadWords()` → 列表 | ✅ |
+| 49 | `POST /api/v1/sensitive-words/create` | ✅ mock-api-db.ts CRUD | SensitiveWordsPage.vue | `onAddWord()` → 新建表单 | ✅ |
+| 50 | `POST /api/v1/sensitive-words/update` | ✅ mock-api-db.ts CRUD | SensitiveWordsPage.vue | `onSaveEdit(id)` → 行内编辑 | ✅ |
+| 51 | `POST /api/v1/sensitive-words/delete` | ✅ mock-api-db.ts CRUD | SensitiveWordsPage.vue | `onDeleteWord(id)` → 确认删除 | ✅ |
 
-### 架构分层
+**所有按钮：** `btn_sw_new`, `btn_sw_save`, `btn_sw_delete`, `btn_sw_test`, `btn_sw_batch_import` — 全部在 SensitiveWordsPage.vue 中实现 ✅
 
-1. 桌面展示层（Electron Renderer）
+**集成链路：**
+- `livetalking.ts` MODERATION_CHECK → 动态调用 `SENSITIVE_WORDS_LIST` API 获取词库，替代硬编码列表
+- `llm-client.ts` `localSensitiveCheck()` → 接受外部传入 `customWords`，支持动态词库
+- `handlers.ts` WRITER_SENSITIVE_CHECK / MODERATION_CHECK → 使用扩展 8 词列表（违禁/敏感词/违规/赌博/色情/诈骗/暴力/血腥）
+- SQLite 种子数据：15 个初始化敏感词，分 4 组（default/illegal/politics/insult/violence），支持 severity 分级
 
-- 承载 10 个业务页面与按钮交互。
-- 只做 UI 状态与用户输入，不承载重计算。
+### 7.9 特别页面
 
-2. 桌面编排层（Electron Main + Node Service）
+| 页面 | 后端 API | 前端实现 | 完成 |
+|------|---------|---------|------|
+| DycastDelegatePage.vue | 无 API 调用，纯 iframe 嵌入 | `dycastUrlInput` + iframe 加载 | ✅ |
+| SettingsPage.vue | 调用 sessionStart/Stop/streamStart | API 服务 + 提供商配置 + 引擎轮换 + Prompt 保存 | ✅ |
 
-- 负责会话生命周期、任务编排、按钮命令总线、队列调度、风险拦截、日志落库。
-- 负责 Python 子进程守护（拉起、心跳、重启、熔断）。
+### 7.10 未使用 API 汇总
 
-3. AI 运行层（Python Runtime Services）
+| API Path | 问题 | 建议 |
+|----------|------|------|
+| `POST /api/v1/review/decision` | 定义了类型和 mock，但无前端页面调用 | 可在 LivePage 审核弹窗中集成，当 moderation check 为 high risk 时弹出人工审核 |
+| `GET /api/v1/metrics` | 定义了类型和 mock，但无前端页面调用 | 可在 SettingsPage 或 LivePage 添加指标面板 |
 
-- ASR 服务：桌面音频回采 -> 文本。
-- LLM 改写网关：调用云端改写/回复接口。
-- TTS 服务：调用云端语音服务并返回音频流。
-- Avatar 推理服务：本地 GPU 执行唇形推理（默认 Wav2Lip）。
-- 媒体服务：音视频混流、编码、预览输出。
+### 7.11 未实现功能（Actions 已定义但无页面）
 
-4. 流媒体与设备层
+| Action ID | 所属页面 | 状态 |
+|-----------|---------|------|
+| `btn_obs_connect` | OBS 去重（Page H） | ⏳ M5 未开始 |
+| `btn_obs_start_dedup` | OBS 去重 | ⏳ M5 未开始 |
+| `btn_obs_stop_dedup` | OBS 去重 | ⏳ M5 未开始 |
+| `btn_obs_apply_threshold` | OBS 去重 | ⏳ M5 未开始 |
+| `btn_obs_preview_diff` | OBS 去重 | ⏳ M5 未开始 |
 
-- WebRTC 预览、RTMP 推流（P0）。
-- 虚拟摄像头输出（P1，Beta 上线）。
-- 音频设备扫描、切换、健康检查。
+### 7.12 敏感词功能专项说明（已完成 ✅）
 
-5. 数据与可观测层
+系统中有**三层敏感词机制**，现已全部打通：
 
-- SQLite：配置、策略版本、账号、审计日志、埋点索引。
-- 本地日志文件：运行日志、错误日志，默认保留 30 天。
-- 指标：inferfps、finalfps、queue_usage_ratio、queue_drop_count、端到端时延。
+**第一层：WriterPage 写话术页面的敏感词检测（已实现 ✅）**
+- 前端按钮 `btn_writer_sensitive_check` → 调用 `POST /api/v1/writer/sensitive-check`
+- WriterPage.vue:130-163 已实现完整的检测逻辑：发送文本 → 获取命中词 → 展示红色标签
+- Mock 后端（handlers.ts）基于扩展 8 词列表做匹配
 
-### 进程拓扑（单机）
+**第二层：LivePage 发送管线的内容审核（已实现 ✅）**
+- `onSendText()` pipeline step 2 调用 `POST /api/v1/moderation/check`
+- LiveTalking 适配器动态调用 `SENSITIVE_WORDS_LIST` API 获取词库
 
-- process_ui: electron_renderer
-- process_orchestrator: electron_main_node
-- process_asr: python_asr
-- process_avatar: python_avatar_infer
-- process_media: python_media
-- cloud_llm_tts: 外部 API（通过网关访问）
+**第三层：敏感词库管理页面 SensitiveWordsPage.vue（已实现 ✅）**
+- 完整 CRUD：增删改查敏感词，支持 severity（high/medium/low）和 group 分组
+- 测试工具：输入文本检测命中词，红色标签展示
+- SQLite 持久化：15 个种子词，4 个分组
+- 路由 `/sensitive-words`，侧边栏导航"敏感词库"
 
-### 通信规范
+---
 
-- Node <-> Python：HTTP/REST（本机回环）
-- Node <-> 云端：HTTPS（带超时、重试、熔断）
-- Node <-> Renderer：IPC（只传业务命令与状态，不传大流媒体数据）
+## 8. 变更日志
 
-## V4.2 技术实现方案（多套可选）
-
-### 实现方案 S1（推荐，当前默认）
-
-- 组成：Electron + Node 编排 + Python FastAPI 服务 + SQLite + FFmpeg。
-- 优势：研发最快、调试直观、满足 1 路会话强实时目标。
-- 风险：服务边界较粗，后续多会话扩展需重构部分调度。
-- 适用阶段：MVP 到 Beta 初期。
-
-### 实现方案 S2（扩展优先）
-
-- 组成：Electron + Node 编排 + Python 分服务（ASR/TTS/Avatar 拆分）+ Redis 队列 + FFmpeg。
-- 优势：可扩展性更好，便于升到 2-5 路会话。
-- 风险：本地部署与运维复杂度上升，MVP 周期变长。
-- 适用阶段：业务验证通过后的扩容阶段。
-
-### 实现方案 S3（性能上限优先）
-
-- 组成：Electron + Node 控制面 + Rust/C++ 媒体核 + TensorRT/ONNXRuntime。
-- 优势：时延与吞吐上限最高。
-- 风险：研发门槛高、交付慢、驱动与兼容成本高。
-- 适用阶段：2.0 长期演进，不建议首版采用。
-
-### 子模块替代方案矩阵
-
-1. LLM 改写：云端 API（默认） | 本地小模型（备选）。
-2. TTS：云端 API（默认） | 本地 TTS（备选）。
-3. Avatar 推理：Wav2Lip（默认） | MuseTalk（画质优先备选）。
-4. 推流协议：RTMP（默认） | WebRTC 预览（并行） | 虚拟摄像头（P1）。
-
-## V4.3 技术路径（里程碑与闸门）
-
-### 路径 P0（必须实现，禁止发散）
-
-1. M1：单机会话骨架
-
-- 完成会话启动/停止、队列调度、配置读写。
-- 闸门：可稳定启动并持续运行 30 分钟。
-
-2. M2：端到端主链路
-
-- 打通“直播消息 -> 改写 -> 风险检测 -> TTS -> 唇形推理 -> 推流”。
-- 闸门：口型首帧 <= 500ms，finalfps >= 25。
-
-3. M3：按钮级闭环
-
-- AI直播、数字人、设置三页全部关键按钮可用。
-- 闸门：按钮成功率 >= 99%，错误可追踪。
-
-4. M4：运营能力闭环
-
-- 话术管理、AI回复、写话术、模型管理、直播账号、音转文字完成 P0 按钮级能力。
-- 闸门：关键流程可回归测试并稳定。
-
-### 路径 P1（后置实现）
-
-1. OBS 去重（保持 P1）。
-2. 虚拟摄像头输出（Beta）。
-3. 多会话并发（2+）。
-
-### 明确不做（防发散）
-
-1. 首版不做全平台同时接入，仅抖音先行。
-2. 首版不做本地训练流程，仅导入资产。
-3. 首版不做多数字人同屏互动。
-4. 首版不做分布式调度与多租户权限。
-5. 首版不做自研驱动级虚拟摄像头。
-
-## V4.4 调用接口设计（内部）
-
-### 会话与编排接口
-
-| 方法 | 路径                   | 关键入参                          | 关键出参                  | 超时 | 重试 |
-| ---- | ---------------------- | --------------------------------- | ------------------------- | ---- | ---- |
-| POST | /api/v1/session/start  | account_id, model_id, stream_mode | session_id, status        | 3s   | 1    |
-| POST | /api/v1/session/stop   | session_id                        | status                    | 2s   | 1    |
-| GET  | /api/v1/session/status | session_id                        | state, inferfps, finalfps | 1s   | 0    |
-
-### 直播接入与队列接口
-
-| 方法 | 路径                    | 关键入参                        | 关键出参           | 超时  | 重试 |
-| ---- | ----------------------- | ------------------------------- | ------------------ | ----- | ---- |
-| POST | /api/v1/live/connect    | platform, room_id, token        | task_id, state     | 3s    | 1    |
-| POST | /api/v1/live/disconnect | task_id                         | state              | 2s    | 1    |
-| POST | /api/v1/queue/enqueue   | session_id, text, priority      | queue_id, position | 500ms | 0    |
-| POST | /api/v1/queue/insert    | session_id, text, priority=high | queue_id, position | 500ms | 0    |
-
-### 文本处理与风控接口
-
-| 方法 | 路径                     | 关键入参                           | 关键出参                 | 超时 | 重试 |
-| ---- | ------------------------ | ---------------------------------- | ------------------------ | ---- | ---- |
-| POST | /api/v1/script/rewrite   | session_id, raw_text, policy_id    | rewritten_text, risk_tag | 2s   | 1    |
-| POST | /api/v1/moderation/check | text, dict_scope                   | risk_level, hit_words    | 1s   | 0    |
-| POST | /api/v1/review/decision  | item_id, action(send/drop/rewrite) | state                    | 1s   | 0    |
-
-### 语音与数字人接口
-
-| 方法 | 路径                   | 关键入参                              | 关键出参         | 超时 | 重试 |
-| ---- | ---------------------- | ------------------------------------- | ---------------- | ---- | ---- |
-| POST | /api/v1/tts/synthesize | text, voice_id, speed                 | audio_stream_ref | 3s   | 1    |
-| POST | /api/v1/avatar/start   | session_id, avatar_id, engine         | state            | 3s   | 1    |
-| POST | /api/v1/avatar/stop    | session_id                            | state            | 2s   | 1    |
-| POST | /api/v1/stream/start   | session_id, mode(rtmp/webrtc), target | state            | 3s   | 1    |
-| POST | /api/v1/stream/stop    | session_id                            | state            | 2s   | 1    |
-
-### 运维监控接口
-
-| 方法 | 路径            | 关键入参   | 关键出参                 | 超时 | 重试 |
-| ---- | --------------- | ---------- | ------------------------ | ---- | ---- |
-| GET  | /api/v1/metrics | session_id | latency, fps, gpu, queue | 1s   | 0    |
-| GET  | /api/v1/health  | none       | service_status           | 1s   | 0    |
-
-## V4.5 接口调用伪代码（流程级）
-
-### 流程 A：直播消息自动播报
-
-1. ON live_message_received(msg)
-2. IF queue_size >= 1000 THEN drop_low_priority_fifo()
-3. rewritten = call /script/rewrite(msg)
-4. risk = call /moderation/check(rewritten)
-5. IF risk.hit THEN push_to_pending_review() AND EXIT
-6. audio_ref = call /tts/synthesize(rewritten)
-7. call /avatar/start_if_needed(session)
-8. call /queue/enqueue(audio_ref, priority=normal)
-9. media_service_mix_and_encode()
-10. call /stream/start_if_needed(session)
-11. emit_metrics_and_logs()
-
-### 流程 B：插播按钮
-
-1. ON btn_insert_click(text)
-2. validate(text_len <= 120 and not_blank)
-3. risk = moderation_check(text)
-4. IF risk.hit THEN pending_review ELSE queue_insert_high_priority(text)
-5. update_ui_queue_position()
-
-### 流程 C：模型轮换按钮
-
-1. ON btn_model_rotate_click()
-2. precheck(next_model_ready)
-3. switch_model(next_model)
-4. warmup_inference(300-500ms)
-5. IF success THEN commit_current_model
-6. ELSE rollback_previous_model_and_toast_error
-
-### 流程 D：停止AI语音按钮
-
-1. ON btn_stop_tts_click()
-2. stop_tts_stream_immediately()
-3. freeze_queue_consume()
-4. update_state(paused_or_stopped)
-5. write_audit_log()
-
-## V4.6 可实现性检查（防过度发散）
-
-### 发散风险清单
-
-1. 同时推进多平台接入（抖音+淘宝+视频号）会导致鉴权与适配爆炸。
-2. 在首版加入训练流程会显著拉长周期并引入重依赖。
-3. 提前上多并发会放大显卡与调度问题，不符合“1路稳定优先”。
-4. 同时做虚拟摄像头与 OBS 去重会稀释主链路资源。
-
-### 收敛准则
-
-1. 每个迭代只允许一个“系统级新能力”。
-2. 所有新能力必须绑定按钮级验收指标。
-3. 若某能力无法在 RTX3060 + 1路场景稳定运行，自动降级到 P1。
-4. 任何跨层改动必须给出回滚路径。
-
-### 当前结论
-
-- 思路未过度发散，当前范围可实现。
-- 只要严格执行 P0/P1 闸门和收敛准则，MVP 可在可控风险内落地。
+| 日期 | 版本 | 变更 |
+|------|------|------|
+| 2026-05-08 | V9 | 新增敏感词库管理页面（SensitiveWordsPage.vue），SQLite CRUD，路由/导航注册，plan.md 映射更新 |
+| 2026-05-08 | V8 | 新增 §7 后端 API ↔ 前端页面映射检查；记录敏感词功能状态 |
+| 2026-05-08 | V7 | 合并 plan-v6 + vibecoding-plan-v1 + plan-real-backend-integration → 唯一基线；记录 M4 完成状态；标记旧文档弃用 |
+| 2026-04-30 | V6 | 运营页面闭环完成，按钮映射表建立 |
+| 2026-04-27 | V1 | 初始需求规划，7 阶段定义 |

@@ -15,6 +15,7 @@ import {
   stopDycastRelayServer
 } from './dycast-relay-server'
 import { closeMockApiDatabase, handleMockApiCall } from './mock-api-db'
+import { startLiveTalking, stopLiveTalking } from './livetalking-process'
 
 function createWindow(): void {
   // Create the browser window.
@@ -100,6 +101,13 @@ app.whenReady().then(() => {
   ipcMain.removeHandler(IpcChannels.DYCAST_RELAY_STATUS)
   ipcMain.handle(IpcChannels.DYCAST_RELAY_STATUS, () => getDycastRelayStatus())
 
+  const runtimeMode = process.env.VITE_APP_RUNTIME_MODE || 'dev-mock'
+  if (runtimeMode === 'dev-cpu') {
+    startLiveTalking().catch((err) => {
+      console.error('[Main] Failed to start LiveTalking:', err)
+    })
+  }
+
   createWindow()
 
   app.on('activate', function () {
@@ -116,6 +124,7 @@ app.on('window-all-closed', () => {
   void stopDouyinDirectClient()
   disposeDouyinDirectClient()
   stopDycastRelayServer()
+  stopLiveTalking().catch(console.error)
   closeMockApiDatabase()
   if (process.platform !== 'darwin') {
     app.quit()

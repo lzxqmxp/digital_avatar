@@ -40,6 +40,7 @@ import {
   type QueueInsertResponse,
   type ScriptRewriteRequest,
   type ScriptRewriteResponse,
+  type ModerationCheckRequest,
   type ModerationCheckResponse,
   type ReviewDecisionRequest,
   type ReviewDecisionResponse,
@@ -81,8 +82,19 @@ interface LtResponse {
   data?: unknown
 }
 
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 5000): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal })
+    return res
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 async function ltPost(path: string, body: unknown): Promise<LtResponse> {
-  const res = await fetch(`${LIVETALKING_BASE}${path}`, {
+  const res = await fetchWithTimeout(`${LIVETALKING_BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
@@ -104,6 +116,41 @@ interface LtSession {
 }
 
 let activeSession: LtSession | null = null
+
+// ---------------------------------------------------------------------------
+// Remote MediaStream capture (for <video> playback in the UI)
+// ---------------------------------------------------------------------------
+
+let remoteStreamPromise: Promise<MediaStream | null> = Promise.resolve(null)
+let resolveRemoteStream: ((stream: MediaStream | null) => void) | null = null
+let remoteStreamResolved = false
+
+function createStreamPromise(): void {
+  remoteStreamResolved = false
+  remoteStreamPromise = new Promise((resolve) => {
+    resolveRemoteStream = resolve
+  })
+}
+
+function resolveStream(stream: MediaStream | null): void {
+  if (resolveRemoteStream && !remoteStreamResolved) {
+    remoteStreamResolved = true
+    resolveRemoteStream(stream)
+    resolveRemoteStream = null
+  }
+}
+
+/**
+ * Returns a promise that resolves to the remote MediaStream once the
+ * RTCPeerConnection's ontrack fires (or null on failure / timeout).
+ * Call this after avatarStart() to get the stream for <video> playback.
+ */
+export function getRemoteStreamPromise(timeoutMs = 10_000): Promise<MediaStream | null> {
+  const timeout = new Promise<null>((_, reject) =>
+    setTimeout(() => reject(new Error('等待流超时')), timeoutMs)
+  )
+  return Promise.race([remoteStreamPromise, timeout]).catch(() => null)
+}
 
 // ---------------------------------------------------------------------------
 // Main dispatch
@@ -141,6 +188,7 @@ export async function liveTalkingCall<T>(
         activeSession.peerConnection.close()
         activeSession.peerConnection = null
       }
+      resolveStream(null)
       const stoppedId = activeSession?.sessionId ?? req?.session_id ?? 'unknown'
       activeSession = null
       return ok<SessionStopResponse>({
@@ -246,19 +294,50 @@ export async function liveTalkingCall<T>(
       }
     }
 
-    // ── Script rewrite (LLM – not in LiveTalking scope; pass-through) ──────
+    // ── Script rewrite (LLM – not in LiveTalking scope; stub with validation) ──
 
     case ApiPaths.SCRIPT_REWRITE: {
       const req = body as ScriptRewriteRequest
+      const original = req?.original_text ?? ''
+      if (!original.trim()) {
+        return err<ScriptRewriteResponse>(ErrorCode.INVALID_TEXT, '文本内容无效') as ApiResponse<T>
+      }
+      // TODO: 接入真实 LLM API 改写
       return ok<ScriptRewriteResponse>({
-        rewritten_text: req?.original_text ?? '',
-        tokens_used: 0
+        rewritten_text: `[改写] ${original}`,
+        tokens_used: Math.ceil(original.length / 2)
       }) as ApiResponse<T>
     }
 
-    // ── Moderation (not in LiveTalking scope; pass as safe) ─────────────────
+    // ── Moderation (sensitive word check via managed list) ───────────────────
 
     case ApiPaths.MODERATION_CHECK: {
+      const req = body as ModerationCheckRequest
+      const text = req?.text ?? ''
+
+      // Try to fetch from API, fall back to local list
+      let words: string[] = []
+      try {
+        const { callApi } = await import('@shared/api/client')
+        const res = await callApi<{ items: { word: string }[] }>(ApiPaths.SENSITIVE_WORDS_LIST, 'GET')
+        if (res.ok && res.data) {
+          words = res.data.items.map(i => i.word)
+        }
+      } catch {
+        // fall through to fallback
+      }
+      if (words.length === 0) {
+        words = ['违禁', '敏感词', '违规']
+      }
+
+      const hit = words.filter(w => text.includes(w))
+      if (hit.length > 0) {
+        return ok<ModerationCheckResponse>({
+          risk_level: 'high',
+          flagged_terms: hit,
+          suggestion: '内容包含敏感词，请修改后重试'
+        }) as ApiResponse<T>
+      }
       return ok<ModerationCheckResponse>({
         risk_level: 'safe',
         flagged_terms: []
@@ -305,11 +384,26 @@ export async function liveTalkingCall<T>(
     case ApiPaths.AVATAR_START: {
       const req = body as AvatarStartRequest
       try {
+        createStreamPromise()
+
         const pc = new RTCPeerConnection({
           iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         })
         pc.addTransceiver('video', { direction: 'recvonly' })
         pc.addTransceiver('audio', { direction: 'recvonly' })
+
+        pc.ontrack = (event) => {
+          resolveStream(event.streams[0] || null)
+        }
+        pc.onconnectionstatechange = () => {
+          if (
+            pc.connectionState === 'failed' ||
+            pc.connectionState === 'disconnected' ||
+            pc.connectionState === 'closed'
+          ) {
+            resolveStream(null)
+          }
+        }
 
         const offer = await pc.createOffer()
         await pc.setLocalDescription(offer)

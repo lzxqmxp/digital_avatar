@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { apiClient } from '@shared/api/client'
+import { apiClient, getAvatarRemoteStream } from '@shared/api/client'
 
 export type AvatarEngine = 'Wav2Lip' | 'SadTalker' | 'DiffTalk'
 
@@ -10,7 +10,8 @@ export const useAvatarStore = defineStore('avatar', {
     isRunning: false,
     engine: 'Wav2Lip' as AvatarEngine,
     selectedAsset: null as string | null,
-    cameraMode: false
+    cameraMode: false,
+    remoteStream: null as MediaStream | null
   }),
 
   actions: {
@@ -24,6 +25,10 @@ export const useAvatarStore = defineStore('avatar', {
         this.avatarSessionId = res.data.avatar_session_id
         this.streamUrl = res.data.stream_url
         this.isRunning = true
+        // 异步获取 WebRTC 远程流（可能稍后才到达）
+        getAvatarRemoteStream().then((stream) => {
+          this.remoteStream = stream
+        })
       }
       return res
     },
@@ -31,8 +36,10 @@ export const useAvatarStore = defineStore('avatar', {
     async stop() {
       const res = await apiClient.sessionStop({ session_id: this.avatarSessionId || '' })
       if (res.ok) {
+        this.stopRemoteStream()
         this.isRunning = false
         this.avatarSessionId = null
+        this.streamUrl = null
       }
       return res
     },
@@ -55,6 +62,14 @@ export const useAvatarStore = defineStore('avatar', {
         await this.start()
       }
       return { ok: true, data: { stream_url: this.streamUrl } }
+    },
+
+    /** 清理远程流，停止所有轨道 */
+    stopRemoteStream() {
+      if (this.remoteStream) {
+        this.remoteStream.getTracks().forEach((t) => t.stop())
+        this.remoteStream = null
+      }
     }
   }
 })

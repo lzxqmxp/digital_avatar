@@ -1,2 +1,2 @@
 // Runtime: Platform adapters (CPU / cloud-GPU)
-export { liveTalkingCall } from './livetalking'
+export { liveTalkingCall, getRemoteStreamPromise } from './livetalking'

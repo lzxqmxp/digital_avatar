@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useAvatarStore, type AvatarEngine } from '@shared/store/avatar'
 import { useSessionStore } from '@shared/store/session'
 import { writeAudit } from '@shared/api/audit'
@@ -10,6 +10,7 @@ const sessionStore = useSessionStore()
 
 const btnStates = ref<Record<string, ButtonState>>({})
 const btnMessages = ref<Record<string, string>>({})
+const videoEl = ref<HTMLVideoElement | null>(null)
 
 function setBtn(id: string, state: ButtonState, message = '') {
   btnStates.value[id] = state
@@ -153,6 +154,18 @@ async function onStart() {
     })
   }
 }
+
+// ── Watch remote stream → set video element srcObject ─────────────────
+
+watch(
+  () => avatarStore.remoteStream,
+  (stream) => {
+    const video = videoEl.value
+    if (video && stream) {
+      video.srcObject = stream
+    }
+  }
+)
 
 // --- btn_avatar_stop ---
 async function onStop() {
@@ -310,6 +323,23 @@ async function onStop() {
         流地址: <code>{{ avatarStore.streamUrl }}</code>
       </div>
     </section>
+
+    <!-- Video Preview -->
+    <section class="section" v-if="avatarStore.isRunning">
+      <h2 class="section-title">数字人画面</h2>
+      <div class="video-wrapper" :class="{ 'video-wrapper--hidden': !avatarStore.remoteStream }">
+        <video
+          ref="videoEl"
+          class="video-player"
+          autoplay
+          playsinline
+          muted
+        ></video>
+        <div v-if="!avatarStore.remoteStream" class="video-placeholder">
+          等待流连接...
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -435,5 +465,32 @@ async function onStop() {
 }
 .stream-url code {
   color: #38bdf8;
+}
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 16 / 9;
+  background: #0f172a;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.video-wrapper--hidden {
+  background: #0f172a;
+}
+.video-player {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+.video-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 14px;
 }
 </style>

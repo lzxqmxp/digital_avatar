@@ -47,6 +47,10 @@ const router = createRouter({
     {
       path: '/asr',
       component: () => import('@features/asr/AsrPage.vue')
+    },
+    {
+      path: '/sensitive-words',
+      component: () => import('@features/settings/SensitiveWordsPage.vue')
     }
   ]
 })

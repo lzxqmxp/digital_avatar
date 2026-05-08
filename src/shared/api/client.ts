@@ -42,6 +42,13 @@ export async function callApi<T>(
   }
 
   if (isCpu) {
+    // 数据类路径（M3）→ IPC → Main SQLite
+    const { trySqliteBackedApi } = await import('@runtime/mock/handlers')
+    const sqliteResult = await trySqliteBackedApi<T>(path, method, body)
+    if (sqliteResult !== null) {
+      return sqliteResult
+    }
+    // 媒体路径 → LiveTalking
     const { liveTalkingCall } = await import('@runtime/adapters/livetalking')
     return liveTalkingCall<T>(path, method, body)
   }
@@ -103,4 +110,16 @@ export const apiClient = {
     callApi<StreamStartResponse>(ApiPaths.STREAM_START, 'POST', body),
 
   metrics: () => callApi<MetricsResponse>(ApiPaths.METRICS, 'GET')
+}
+
+/**
+ * Retrieve the remote MediaStream from the active WebRTC session.
+ * Only meaningful after avatarStart() succeeds; returns null in mock mode.
+ */
+export async function getAvatarRemoteStream(): Promise<MediaStream | null> {
+  if (isCpu) {
+    const { getRemoteStreamPromise } = await import('@runtime/adapters/livetalking')
+    return getRemoteStreamPromise()
+  }
+  return null
 }
